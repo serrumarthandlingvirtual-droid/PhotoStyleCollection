@@ -2,9 +2,9 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Photo Style Collection</title>
-    <!-- Tailwind CSS for styling (Black, White, Yellow Theme) -->
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -26,11 +26,13 @@
             }
         }
     </script>
+    
     <style>
-        body { background-color: #0a0a0a; color: #f5f5f5; overflow-x: hidden; }
+        /* Menggunakan 100dvh agar sesuai dengan viewport dinamis di mobile browser */
+        body { background-color: #0a0a0a; color: #f5f5f5; overflow-x: hidden; height: 100dvh; }
         
         /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #171717; }
         ::-webkit-scrollbar-thumb { background: #525252; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #fbbf24; }
@@ -62,7 +64,7 @@
         #preview-container {
             position: relative;
             width: 100%;
-            height: calc(100vh - 140px);
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -93,86 +95,102 @@
             top: 0; left: 0; right: 0; bottom: 0;
             cursor: grab;
             z-index: 10;
+            touch-action: none; /* Mencegah scroll halaman saat drag di HP */
         }
         #watermark-interaction:active { cursor: grabbing; }
 
-        /* Camera Video Element (Hidden normally) */
+        /* Camera Video Element */
         #camera-video { display: none; }
+        
+        /* Custom Toast Animation */
+        .toast-enter { transform: translateY(-100%); opacity: 0; }
+        .toast-enter-active { transform: translateY(0); opacity: 1; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .toast-leave { transform: translateY(0); opacity: 1; }
+        .toast-leave-active { transform: translateY(-100%); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
-<body class="h-screen flex flex-col font-sans">
+<body class="flex flex-col font-sans">
 
-    <header class="bg-psc-dark border-b border-gray-800 p-4 flex justify-between items-center shadow-md z-20">
+    <header class="bg-psc-dark border-b border-gray-800 p-3 md:p-4 flex flex-col md:flex-row justify-between items-center shadow-md z-20 gap-3 shrink-0">
         <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded bg-psc-yellow text-psc-black flex items-center justify-center font-bold text-xl">P</div>
-            <h1 class="text-xl font-bold tracking-wider text-psc-light">PHOTO <span class="text-psc-yellow">STYLE</span> COLLECTION</h1>
+            <h1 class="text-lg md:text-xl font-bold tracking-wider text-psc-light truncate">PHOTO <span class="text-psc-yellow">STYLE</span></h1>
         </div>
-        <div class="flex gap-3">
-            <button id="btn-upload-trigger" class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-semibold transition border border-gray-600">
-                Upload Foto
+        <div class="flex gap-2 md:gap-3 w-full md:w-auto">
+            <button id="btn-upload-trigger" class="flex-1 md:flex-none bg-gray-800 hover:bg-gray-700 text-white px-3 md:px-4 py-2 rounded text-xs md:text-sm font-semibold transition border border-gray-600">
+                Upload
             </button>
             <input type="file" id="upload-input" accept="image/*" class="hidden">
-            <button id="btn-download" class="bg-psc-yellow hover:bg-psc-yellowHover text-psc-black px-6 py-2 rounded text-sm font-bold transition shadow-[0_0_10px_rgba(251,191,36,0.3)]">
+            <button id="btn-download" class="flex-1 md:flex-none bg-psc-yellow hover:bg-psc-yellowHover text-psc-black px-3 md:px-6 py-2 rounded text-xs md:text-sm font-bold transition shadow-[0_0_10px_rgba(251,191,36,0.3)]">
                 Download HD
             </button>
         </div>
     </header>
 
-    <main class="flex-1 flex overflow-hidden">
+    <!-- Tempat untuk notifikasi (menggantikan alert) -->
+    <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 w-11/12 max-w-md pointer-events-none"></div>
+
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
+        
         <!-- Main Preview Area -->
-        <section class="flex-1 relative bg-black flex flex-col">
+        <!-- Pada mobile mengambil 55% tinggi layar, di desktop mengambil sisa ruang -->
+        <section class="w-full h-[55%] md:h-full md:flex-1 relative bg-black flex flex-col shrink-0">
             <div id="preview-container">
-                <span id="no-image-text" class="text-gray-600 absolute z-0 select-none pointer-events-none">Belum ada foto. Upload atau gunakan kamera.</span>
+                <span id="no-image-text" class="text-gray-500 text-sm md:text-base absolute z-0 select-none pointer-events-none text-center px-4">
+                    Belum ada foto.<br>Upload atau gunakan kamera.
+                </span>
                 <canvas id="main-canvas"></canvas>
                 <div id="watermark-interaction" style="display:none;"></div>
             </div>
             
             <!-- Quick Camera Tools (Overlaid on bottom of preview) -->
-            <div id="camera-controls" class="hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-psc-dark/80 backdrop-blur border border-gray-700 p-3 rounded-xl flex items-center gap-4 z-20">
-                <div class="flex flex-col text-xs text-gray-400">
-                    <label>Exposure</label>
-                    <input type="range" id="cam-exposure" min="-2" max="2" step="0.1" value="0" class="w-24">
+            <div id="camera-controls" class="hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-psc-dark/90 backdrop-blur border border-gray-700 p-2 md:p-3 rounded-xl flex items-center gap-2 md:gap-4 z-20 shadow-xl w-11/12 md:w-auto justify-between md:justify-center">
+                <div class="flex flex-col text-[10px] md:text-xs text-gray-400">
+                    <label class="mb-1 hidden md:block">Exposure</label>
+                    <input type="range" id="cam-exposure" min="-2" max="2" step="0.1" value="0" class="w-16 md:w-24">
                 </div>
-                <div class="flex gap-1 bg-gray-800 p-1 rounded">
-                    <button class="cam-zoom-btn px-3 py-1 rounded bg-psc-yellow text-black text-xs font-bold" data-zoom="1">1x</button>
-                    <button class="cam-zoom-btn px-3 py-1 rounded hover:bg-gray-700 text-xs font-bold" data-zoom="2">2x</button>
-                    <button class="cam-zoom-btn px-3 py-1 rounded hover:bg-gray-700 text-xs font-bold" data-zoom="3">3x</button>
+                <div class="flex gap-1 bg-gray-800 p-1 rounded shrink-0">
+                    <button class="cam-zoom-btn px-2 md:px-3 py-1 rounded bg-psc-yellow text-black text-xs font-bold" data-zoom="1">1x</button>
+                    <button class="cam-zoom-btn px-2 md:px-3 py-1 rounded hover:bg-gray-700 text-xs font-bold" data-zoom="2">2x</button>
+                    <button class="cam-zoom-btn px-2 md:px-3 py-1 rounded hover:bg-gray-700 text-xs font-bold" data-zoom="3">3x</button>
                 </div>
-                <button id="btn-capture" class="w-12 h-12 rounded-full border-4 border-gray-400 bg-white hover:bg-gray-200 transition"></button>
-                <button id="btn-stop-cam" class="text-red-400 hover:text-red-300 text-xs">Tutup</button>
+                <button id="btn-capture" class="w-10 h-10 md:w-12 md:h-12 rounded-full border-4 border-gray-400 bg-white hover:bg-gray-200 transition shrink-0"></button>
+                <button id="btn-stop-cam" class="text-red-400 hover:text-red-300 text-xs font-bold p-2 shrink-0">Tutup</button>
             </div>
             <video id="camera-video" autoplay playsinline></video>
         </section>
 
         <!-- Controls Sidebar -->
-        <aside class="w-96 bg-psc-dark border-l border-gray-800 flex flex-col z-10 overflow-hidden shadow-2xl">
-            <!-- Tabs -->
-            <div class="flex flex-wrap border-b border-gray-800 bg-black p-1 text-xs font-semibold">
-                <button class="tab-btn flex-1 py-3 text-psc-yellow border-b-2 border-psc-yellow" data-target="tab-camera">Kamera</button>
-                <button class="tab-btn flex-1 py-3 text-gray-400 hover:text-white" data-target="tab-filters">Filter</button>
-                <button class="tab-btn flex-1 py-3 text-gray-400 hover:text-white" data-target="tab-frame">Frame</button>
-                <button class="tab-btn flex-1 py-3 text-gray-400 hover:text-white" data-target="tab-text">Teks</button>
-                <button class="tab-btn flex-1 py-3 text-gray-400 hover:text-white" data-target="tab-watermark">Logo</button>
+        <!-- Pada mobile mengambil sisa ruang bawah, di desktop lebar tetap -->
+        <aside class="w-full h-[45%] md:h-full md:w-96 bg-psc-dark border-t md:border-t-0 md:border-l border-gray-800 flex flex-col z-10 shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.3)] md:shadow-2xl">
+            
+            <!-- Tabs (Scrollable horizontal on small screens) -->
+            <div class="flex border-b border-gray-800 bg-black text-xs font-semibold overflow-x-auto shrink-0 hide-scrollbar">
+                <button class="tab-btn min-w-[70px] flex-1 py-3 px-2 text-psc-yellow border-b-2 border-psc-yellow whitespace-nowrap transition-colors" data-target="tab-camera">Kamera</button>
+                <button class="tab-btn min-w-[70px] flex-1 py-3 px-2 text-gray-400 hover:text-white whitespace-nowrap transition-colors" data-target="tab-filters">Filter</button>
+                <button class="tab-btn min-w-[70px] flex-1 py-3 px-2 text-gray-400 hover:text-white whitespace-nowrap transition-colors" data-target="tab-frame">Frame</button>
+                <button class="tab-btn min-w-[70px] flex-1 py-3 px-2 text-gray-400 hover:text-white whitespace-nowrap transition-colors" data-target="tab-text">Teks</button>
+                <button class="tab-btn min-w-[70px] flex-1 py-3 px-2 text-gray-400 hover:text-white whitespace-nowrap transition-colors" data-target="tab-watermark">Logo</button>
             </div>
 
             <!-- Tab Contents -->
-            <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+            <div class="flex-1 overflow-y-auto p-4 md:p-5 relative">
                 
                 <!-- CAMERA TAB -->
                 <div id="tab-camera" class="tab-content block space-y-4">
-                    <h2 class="text-lg font-bold text-white mb-2 border-b border-gray-700 pb-2">Pengaturan Kamera</h2>
-                    <p class="text-xs text-gray-400 mb-4">Aktifkan kamera untuk mengambil gambar langsung dengan dukungan lensa optical (jika hardware mendukung) dan exposure control.</p>
-                    <button id="btn-start-cam" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white py-3 rounded-lg flex items-center justify-center gap-2 transition">
+                    <h2 class="text-base md:text-lg font-bold text-white mb-2 border-b border-gray-700 pb-2">Pengaturan Kamera</h2>
+                    <p class="text-[11px] md:text-xs text-gray-400 mb-4 leading-relaxed">Aktifkan kamera untuk mengambil gambar langsung dengan dukungan lensa optical (jika hardware mendukung) dan exposure control. Pastikan memberikan izin akses kamera.</p>
+                    <button id="btn-start-cam" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white py-3 md:py-4 rounded-lg flex items-center justify-center gap-2 transition font-semibold shadow-inner">
                         <svg class="w-5 h-5 text-psc-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        Buka Kamera Utama
+                        Buka Kamera Belakang
                     </button>
-                    <div id="cam-status" class="text-xs text-psc-yellow hidden">Kamera aktif. Gunakan kontrol di area preview.</div>
+                    <div id="cam-status" class="text-xs text-psc-yellow hidden bg-yellow-900/20 p-2 rounded border border-yellow-900/50 text-center">Kamera aktif. Gunakan kontrol di area gambar.</div>
                 </div>
 
                 <!-- FILTERS TAB -->
-                <div id="tab-filters" class="tab-content hidden">
-                    <div class="mb-4">
-                        <select id="filter-category" class="w-full bg-black border border-gray-700 text-white p-2 rounded focus:border-psc-yellow focus:outline-none">
+                <div id="tab-filters" class="tab-content hidden flex flex-col h-full">
+                    <div class="mb-3 shrink-0">
+                        <select id="filter-category" class="w-full bg-black border border-gray-700 text-white p-2.5 rounded focus:border-psc-yellow focus:outline-none text-sm appearance-none">
                             <option value="pro">Pro Auto Enhance (10)</option>
                             <option value="cinematic">Cinematic Style (10)</option>
                             <option value="film">Film Style (10)</option>
@@ -186,86 +204,97 @@
                         </select>
                     </div>
                     <!-- Filter Grid -->
-                    <div id="filter-grid" class="grid grid-cols-2 gap-2">
-                        <!-- Filters populated by JS -->
+                    <div class="flex-1 overflow-y-auto pr-1 pb-4">
+                        <div id="filter-grid" class="grid grid-cols-2 gap-2">
+                            <!-- Filters populated by JS -->
+                        </div>
                     </div>
-                    <button id="btn-reset-filter" class="w-full mt-4 bg-red-900/30 text-red-400 border border-red-900 hover:bg-red-900/50 py-2 rounded text-sm transition">Hapus Filter</button>
+                    <div class="pt-3 border-t border-gray-800 mt-auto shrink-0 bg-psc-dark">
+                        <button id="btn-reset-filter" class="w-full bg-red-900/30 text-red-400 border border-red-900 hover:bg-red-900/50 py-2.5 rounded text-sm transition font-semibold">Hapus Filter</button>
+                    </div>
                 </div>
 
                 <!-- FRAME TAB -->
-                <div id="tab-frame" class="tab-content hidden space-y-5">
+                <div id="tab-frame" class="tab-content hidden space-y-6">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-300 mb-2">Jenis Frame Polaroid (6)</label>
-                        <div class="grid grid-cols-3 gap-2">
-                            <button class="frame-btn active border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow" data-type="none">Tanpa Frame</button>
-                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow" data-type="classic">Classic</button>
-                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow" data-type="square">Square 1:1</button>
-                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow" data-type="wide">Wide</button>
-                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow" data-type="tall">Tall Mini</button>
-                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow" data-type="borderless">Modern Edge</button>
+                        <label class="block text-sm font-semibold text-gray-300 mb-3">Jenis Frame Polaroid</label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            <button class="frame-btn active border border-gray-700 bg-gray-800 p-2.5 rounded text-xs hover:border-psc-yellow transition" data-type="none">Tanpa Frame</button>
+                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2.5 rounded text-xs hover:border-psc-yellow transition" data-type="classic">Classic</button>
+                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2.5 rounded text-xs hover:border-psc-yellow transition" data-type="square">Square 1:1</button>
+                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2.5 rounded text-xs hover:border-psc-yellow transition" data-type="wide">Wide</button>
+                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2.5 rounded text-xs hover:border-psc-yellow transition" data-type="tall">Tall Mini</button>
+                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2.5 rounded text-xs hover:border-psc-yellow transition" data-type="borderless">Modern Edge</button>
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-300 mb-2">Ketebalan Frame</label>
+                        <label class="block text-sm font-semibold text-gray-300 mb-3 flex justify-between">Ketebalan <span id="val-thick" class="text-psc-yellow font-normal">1.0</span></label>
                         <input type="range" id="frame-thickness" min="0.5" max="3" step="0.1" value="1">
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-300 mb-2">Warna Frame</label>
-                        <div class="flex items-center gap-3">
-                            <input type="color" id="frame-color" value="#ffffff" class="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0">
-                            <span class="text-xs text-gray-400">Pilih warna base frame polaroid</span>
+                        <label class="block text-sm font-semibold text-gray-300 mb-3">Warna Frame</label>
+                        <div class="flex items-center gap-4 bg-gray-900 p-2 rounded border border-gray-800">
+                            <input type="color" id="frame-color" value="#ffffff" class="w-12 h-12 rounded cursor-pointer bg-transparent border-0 p-1">
+                            <span class="text-[11px] md:text-xs text-gray-400 flex-1">Pilih warna solid untuk dasar polaroid.</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- TEXT TAB -->
                 <div id="tab-text" class="tab-content hidden space-y-4">
-                    <p class="text-xs text-gray-400 mb-2">Tambahkan watermark teks ala mesin ketik pada bagian bawah foto (hanya terlihat jika menggunakan frame).</p>
+                    <p class="text-[11px] md:text-xs text-gray-400 mb-4 bg-gray-900/50 p-2 rounded">Teks bergaya mesin ketik pada bagian bawah foto (hanya terlihat jika menggunakan Frame aktif).</p>
                     
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">Tanggal</label>
-                        <input type="text" id="text-date" placeholder="Mis: 12 OKT" class="w-full bg-black border border-gray-700 text-white p-2 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Tanggal</label>
+                            <input type="text" id="text-date" placeholder="Mis: 12 OKT" class="w-full bg-black border border-gray-700 text-white p-2.5 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none placeholder-gray-700 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Tahun</label>
+                            <input type="text" id="text-year" placeholder="Mis: 1998" class="w-full bg-black border border-gray-700 text-white p-2.5 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none placeholder-gray-700 transition">
+                        </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">Tahun</label>
-                        <input type="text" id="text-year" placeholder="Mis: 1998" class="w-full bg-black border border-gray-700 text-white p-2 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none">
+                        <label class="block text-xs font-semibold text-gray-300 mb-1">Lokasi / Keterangan Kanan</label>
+                        <input type="text" id="text-location" placeholder="Mis: JAKARTA, ID" class="w-full bg-black border border-gray-700 text-white p-2.5 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none placeholder-gray-700 transition">
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">Lokasi / Keterangan</label>
-                        <input type="text" id="text-location" placeholder="Mis: JAKARTA, ID" class="w-full bg-black border border-gray-700 text-white p-2 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none">
-                    </div>
-                    <div>
+                    <div class="pt-2">
                         <label class="block text-xs font-semibold text-gray-300 mb-2">Warna Teks</label>
-                        <input type="color" id="text-color" value="#222222" class="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0">
+                        <div class="flex items-center gap-3">
+                            <input type="color" id="text-color" value="#222222" class="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0">
+                            <span class="text-xs text-gray-400">Pilih warna kontras dengan frame</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- WATERMARK TAB -->
-                <div id="tab-watermark" class="tab-content hidden space-y-4">
-                    <div class="bg-gray-800 p-3 rounded border border-gray-700">
-                        <label class="block text-sm font-semibold text-white mb-2">Upload Logo Anda</label>
-                        <input type="file" id="watermark-input" accept="image/png, image/jpeg" class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-psc-yellow file:text-black hover:file:bg-psc-yellowHover cursor-pointer">
-                        <p class="text-[10px] text-gray-500 mt-2">Gunakan format PNG transparan untuk hasil terbaik.</p>
+                <div id="tab-watermark" class="tab-content hidden space-y-5">
+                    <div class="bg-gray-800 p-3 md:p-4 rounded-lg border border-gray-700 shadow-inner">
+                        <label class="block text-sm font-semibold text-white mb-3">Upload Logo Anda</label>
+                        <input type="file" id="watermark-input" accept="image/png, image/jpeg, image/svg+xml" class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-psc-yellow file:text-black hover:file:bg-psc-yellowHover cursor-pointer transition">
+                        <p class="text-[10px] md:text-xs text-gray-500 mt-2">Disarankan format PNG transparan.</p>
                     </div>
                     
-                    <div>
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2 cursor-pointer">
-                            <input type="checkbox" id="watermark-toggle" checked class="accent-psc-yellow w-4 h-4"> Tampilkan Watermark
+                    <div class="bg-black/30 p-3 rounded">
+                        <label class="flex items-center gap-3 text-sm font-semibold text-gray-300 cursor-pointer select-none">
+                            <input type="checkbox" id="watermark-toggle" checked class="accent-psc-yellow w-5 h-5"> Tampilkan Watermark
                         </label>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-2">Opacity (Transparansi)</label>
-                        <input type="range" id="watermark-opacity" min="0" max="1" step="0.05" value="0.7">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-2">Ukuran Relatif</label>
-                        <input type="range" id="watermark-size" min="0.05" max="0.5" step="0.01" value="0.15">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-2 flex justify-between">Transparansi <span id="val-op" class="text-psc-yellow">70%</span></label>
+                            <input type="range" id="watermark-opacity" min="0.1" max="1" step="0.05" value="0.7">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-2 flex justify-between">Ukuran Relatif <span id="val-sz" class="text-psc-yellow">15%</span></label>
+                            <input type="range" id="watermark-size" min="0.05" max="0.5" step="0.01" value="0.15">
+                        </div>
                     </div>
 
-                    <div class="p-3 bg-black border border-dashed border-gray-700 rounded text-xs text-center text-gray-400">
-                        💡 <strong>Tips:</strong> Anda bisa langsung klik dan geser (drag) logo watermark pada area preview di sebelah kiri untuk memindahkannya dengan leluasa.
+                    <div class="p-3 bg-blue-900/20 border border-blue-900/50 rounded-lg text-[11px] md:text-xs text-blue-200 flex items-start gap-2">
+                        <span class="text-lg leading-none">👆</span>
+                        <p><strong>Geser Bebas:</strong> Sentuh/klik dan tahan pada logo di area foto utama untuk memindahkannya ke posisi mana pun.</p>
                     </div>
                 </div>
             </div>
@@ -273,248 +302,247 @@
     </main>
 
     <script>
+        // --- Custom Alert System (Toast) ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgColor = 'bg-gray-800';
+            if(type === 'error') bgColor = 'bg-red-600';
+            else if(type === 'success') bgColor = 'bg-green-600';
+            else if(type === 'warning') bgColor = 'bg-yellow-600';
+
+            toast.className = `${bgColor} text-white px-4 py-3 rounded shadow-lg text-sm font-semibold flex items-center justify-between pointer-events-auto border border-white/10`;
+            toast.innerHTML = `<span>${message}</span>`;
+            
+            // Add initial animation class
+            toast.classList.add('toast-enter');
+            container.appendChild(toast);
+            
+            // Trigger reflow
+            void toast.offsetWidth;
+            
+            // Start enter animation
+            toast.classList.remove('toast-enter');
+            toast.classList.add('toast-enter-active');
+            
+            setTimeout(() => {
+                // Start leave animation
+                toast.classList.remove('toast-enter-active');
+                toast.classList.add('toast-leave-active');
+                setTimeout(() => toast.remove(), 300); // match transition duration
+            }, 3500);
+        }
+
         // --- CORE STATE ---
         const state = {
-            image: null, // The loaded Image object
+            image: null, 
             originalWidth: 0,
             originalHeight: 0,
             
-            // Camera State
+            // Camera
             stream: null,
             videoTrack: null,
             camZoom: 1,
             camExposure: 0,
 
-            // Filter State
+            // Filter
             activeFilterCSS: '',
             
-            // Frame State
-            frameType: 'none', // none, classic, square, wide, tall, borderless
-            frameThickness: 1.0, // multiplier
+            // Frame
+            frameType: 'none', 
+            frameThickness: 1.0,
             frameColor: '#ffffff',
             
-            // Text State
+            // Text
             textDate: '',
             textYear: '',
             textLocation: '',
             textColor: '#222222',
             
-            // Watermark State
+            // Watermark
             showWatermark: true,
             watermarkImage: null,
             watermarkOpacity: 0.7,
-            watermarkSize: 0.15, // 15% of image width
-            watermarkPos: { x: 0.8, y: 0.8 }, // Relative coordinates (0 to 1)
+            watermarkSize: 0.15,
+            watermarkPos: { x: 0.8, y: 0.8 }, 
             isDraggingWatermark: false
         };
 
         // --- DOM ELEMENTS ---
         const canvas = document.getElementById('main-canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        // Gunakan willReadFrequently karena toBlob membacanya nanti, tapi hilangkan jika dirasa memperlambat render drag
+        const ctx = canvas.getContext('2d', { alpha: false }); 
         const interactionDiv = document.getElementById('watermark-interaction');
         
-        // --- DEFAULT WATERMARK LOGO GENERATOR (Reference Logo) ---
-        // Generates a default logo purely in JS to avoid external requests
+        // Hide scrollbar class style inject
+        document.head.insertAdjacentHTML('beforeend', '<style>.hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }</style>');
+
+        // --- STREAMING_CHUNK: Pembuatan Logo Default & Database Filter... ---
+        
         function createDefaultLogo() {
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = 300; tempCanvas.height = 300;
             const tCtx = tempCanvas.getContext('2d');
             
-            // Draw circle
+            // Draw shield/circle
             tCtx.beginPath();
-            tCtx.arc(150, 150, 140, 0, Math.PI * 2);
+            tCtx.arc(150, 150, 130, 0, Math.PI * 2);
             tCtx.strokeStyle = '#fbbf24';
-            tCtx.lineWidth = 15;
+            tCtx.lineWidth = 20;
             tCtx.stroke();
-            tCtx.fillStyle = 'rgba(0,0,0,0.5)';
+            tCtx.fillStyle = 'rgba(10,10,10,0.7)';
             tCtx.fill();
             
             // Draw Text
-            tCtx.fillStyle = '#fbbf24';
-            tCtx.font = 'bold 80px "Courier New", Courier, monospace';
+            tCtx.fillStyle = '#f5f5f5';
+            tCtx.font = 'bold 80px "Arial", sans-serif';
             tCtx.textAlign = 'center';
             tCtx.textBaseline = 'middle';
-            tCtx.fillText('PSC', 150, 150);
+            tCtx.fillText('PSC', 150, 155);
             
             const img = new Image();
             img.src = tempCanvas.toDataURL('image/png');
             img.onload = () => {
                 state.watermarkImage = img;
-                render();
+                if(state.image) render();
             };
         }
         createDefaultLogo();
 
-        // --- STREAMING_CHUNK: Filter Engine & Database... ---
-        // Generating 100+ distinct filters based on the prompt requirements
+        // Generating Filter Logic
         const filterDatabase = {
             pro: [], cinematic: [], film: [], retro: [], vintage: [],
             leica: [], fuji: [], kodak: [], canon: [], sony: []
         };
 
-        // Helper to generate filters programmatically to save space but ensure variety
-        function generateFilters(category, baseValues, count) {
+        function generateFilters(category, count) {
             for(let i=1; i<=count; i++) {
-                // Introduce variance based on index to create distinct 10 filters per category
-                const v = i / count; 
                 let css = '';
+                if (category === 'pro') css = `contrast(${105 + i*2}%) saturate(${105 + i*3}%) brightness(${98 + i}%)`;
+                else if (category === 'cinematic') css = `sepia(${10+i*2}%) hue-rotate(${-10+i}deg) contrast(${110+i*3}%) saturate(${80+i*4}%) brightness(${90+i*2}%)`;
+                else if (category === 'film') css = `contrast(${90+i*3}%) saturate(${70+i*5}%) sepia(${20+i}%) brightness(${100+i}%) hue-rotate(${i*2}deg)`;
+                else if (category === 'retro') css = `sepia(${50+i*5}%) contrast(${120-i*2}%) saturate(${150-i*5}%) hue-rotate(${-30+i*4}deg)`;
+                else if (category === 'vintage') css = `grayscale(${30+i*5}%) sepia(${40+i*3}%) contrast(${85+i*2}%) brightness(${110-i}%)`;
+                else if (category === 'leica') css = `contrast(${115+i}%) saturate(${110+i*2}%) grayscale(${i}%) sepia(${i*2}%)`;
+                else if (category === 'fuji') css = `saturate(${120-i}%) contrast(${105+i*2}%) hue-rotate(${-5+i}deg) sepia(${5+i}%)`;
+                else if (category === 'kodak') css = `sepia(${15+i*2}%) saturate(${130-i*2}%) contrast(${95+i}%) brightness(${105-i}%) hue-rotate(${-10+i}deg)`;
+                else if (category === 'canon') css = `saturate(${115+i*2}%) contrast(${100+i*2}%) sepia(${5+i}%) hue-rotate(${-2-i}deg)`;
+                else if (category === 'sony') css = `contrast(${120+i}%) saturate(${105+i}%) hue-rotate(${5+i}deg) sepia(${i}%) brightness(${95+i}%)`;
                 
-                if (category === 'pro') {
-                    // Pro auto enhance simulates dynamic range and light correction
-                    css = `contrast(${105 + i*2}%) saturate(${105 + i*3}%) brightness(${98 + i}%)`;
-                } else if (category === 'cinematic') {
-                    // Cinematic: teal/orange push, high contrast, slight desat
-                    css = `sepia(${10+i*2}%) hue-rotate(${-10+i}deg) contrast(${110+i*3}%) saturate(${80+i*4}%) brightness(${90+i*2}%)`;
-                } else if (category === 'film') {
-                    // Film: grain simulation (via contrast), shifted colors, faded blacks
-                    css = `contrast(${90+i*3}%) saturate(${70+i*5}%) sepia(${20+i}%) brightness(${100+i}%) hue-rotate(${i*2}deg)`;
-                } else if (category === 'retro') {
-                    // Retro: Heavy sepia, color rotation, blow out highlights
-                    css = `sepia(${50+i*5}%) contrast(${120-i*2}%) saturate(${150-i*5}%) hue-rotate(${-30+i*4}deg)`;
-                } else if (category === 'vintage') {
-                    // Vintage: Grayscale leaning, low contrast, brown tint
-                    css = `grayscale(${30+i*5}%) sepia(${40+i*3}%) contrast(${85+i*2}%) brightness(${110-i}%)`;
-                } 
-                // Camera Simulations
-                else if (category === 'leica') {
-                    // Leica: High micro-contrast, natural but punchy colors, slight vignette (simulated via contrast/brightness)
-                    css = `contrast(${115+i}%) saturate(${110+i*2}%) grayscale(${i}%) sepia(${i*2}%)`;
-                } else if (category === 'fuji') {
-                    // Fuji: Classic Chrome/Provia vibes - green/magenta shifts, pleasing skin tones
-                    css = `saturate(${120-i}%) contrast(${105+i*2}%) hue-rotate(${-5+i}deg) sepia(${5+i}%)`;
-                } else if (category === 'kodak') {
-                    // Kodak: Portra/Gold vibes - warm yellow/red tones, lifted shadows
-                    css = `sepia(${15+i*2}%) saturate(${130-i*2}%) contrast(${95+i}%) brightness(${105-i}%) hue-rotate(${-10+i}deg)`;
-                } else if (category === 'canon') {
-                    // Canon: Warm, saturated reds/oranges
-                    css = `saturate(${115+i*2}%) contrast(${100+i*2}%) sepia(${5+i}%) hue-rotate(${-2-i}deg)`;
-                } else if (category === 'sony') {
-                    // Sony: Clinical, sharp, slightly cool/magenta
-                    css = `contrast(${120+i}%) saturate(${105+i}%) hue-rotate(${5+i}deg) sepia(${i}%) brightness(${95+i}%)`;
-                }
-                
-                filterDatabase[category].push({
-                    name: `${category.charAt(0).toUpperCase() + category.slice(1)} ${i}`,
-                    css: css
-                });
+                filterDatabase[category].push({ name: `${category.charAt(0).toUpperCase() + category.slice(1)} ${i}`, css: css });
             }
         }
+        Object.keys(filterDatabase).forEach(key => generateFilters(key, 10));
 
-        // Generate 10 for each category
-        Object.keys(filterDatabase).forEach(key => generateFilters(key, {}, 10));
-
-        // --- STREAMING_CHUNK: UI Initialization & Event Listeners... ---
+        // --- STREAMING_CHUNK: Setup Event Listeners UI... ---
         
-        // Tab switching logic
+        // Tab UI
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                // Reset styles
                 document.querySelectorAll('.tab-btn').forEach(b => {
                     b.classList.remove('text-psc-yellow', 'border-b-2', 'border-psc-yellow');
                     b.classList.add('text-gray-400');
                 });
-                // Hide contents
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
                 
-                // Activate clicked
-                const target = e.target.getAttribute('data-target');
-                e.target.classList.remove('text-gray-400');
-                e.target.classList.add('text-psc-yellow', 'border-b-2', 'border-psc-yellow');
-                document.getElementById(target).classList.remove('hidden');
+                const target = e.currentTarget.getAttribute('data-target');
+                e.currentTarget.classList.remove('text-gray-400');
+                e.currentTarget.classList.add('text-psc-yellow', 'border-b-2', 'border-psc-yellow');
                 
-                // Show/hide watermark interaction overlay based on tab
-                if(target === 'tab-watermark' && state.image && state.showWatermark) {
-                    interactionDiv.style.display = 'block';
-                } else {
-                    interactionDiv.style.display = 'none';
+                const targetEl = document.getElementById(target);
+                if(targetEl) {
+                    targetEl.classList.remove('hidden');
+                    if(target === 'tab-filters') targetEl.classList.add('flex'); // Keep flex layout for filter tab
+                    else targetEl.classList.add('block');
                 }
+                
+                // Toggle watermark interaction surface
+                interactionDiv.style.display = (target === 'tab-watermark' && state.image && state.showWatermark) ? 'block' : 'none';
             });
         });
 
-        // Filter UI Population
+        // Filter UI
         const filterGrid = document.getElementById('filter-grid');
-        const categorySelect = document.getElementById('filter-category');
-        
         function renderFilterButtons(category) {
             filterGrid.innerHTML = '';
             filterDatabase[category].forEach((f, index) => {
                 const btn = document.createElement('button');
-                btn.className = 'filter-btn bg-gray-800 border border-gray-700 text-gray-300 text-xs py-2 px-1 rounded hover:border-psc-yellow focus:outline-none';
+                btn.className = 'filter-btn bg-gray-800 border border-gray-700 text-gray-300 text-xs py-3 px-1 rounded hover:border-psc-yellow focus:outline-none w-full text-center truncate';
+                if(state.activeFilterCSS === f.css) btn.classList.add('active');
                 btn.textContent = f.name;
                 btn.onclick = () => {
                     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     state.activeFilterCSS = f.css;
-                    render();
+                    requestAnimationFrame(render);
                 };
                 filterGrid.appendChild(btn);
             });
         }
-        
-        categorySelect.addEventListener('change', (e) => renderFilterButtons(e.target.value));
-        renderFilterButtons('pro'); // Initial load
+        document.getElementById('filter-category').addEventListener('change', (e) => renderFilterButtons(e.target.value));
+        renderFilterButtons('pro'); 
         
         document.getElementById('btn-reset-filter').addEventListener('click', () => {
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             state.activeFilterCSS = '';
-            render();
+            requestAnimationFrame(render);
+            showToast('Filter telah dihapus.', 'info');
         });
 
-        // --- STREAMING_CHUNK: Frame & Text Input Handlers... ---
-        
-        // Frame Handlers
+        // UI Controls (Frame, Text, Watermark) Updates
         document.querySelectorAll('.frame-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.frame-btn').forEach(b => {
                     b.classList.remove('border-psc-yellow', 'text-psc-yellow');
                     b.classList.add('border-gray-700');
                 });
-                const target = e.target;
+                const target = e.currentTarget;
                 target.classList.remove('border-gray-700');
                 target.classList.add('border-psc-yellow', 'text-psc-yellow');
-                
                 state.frameType = target.getAttribute('data-type');
-                render();
+                requestAnimationFrame(render);
             });
         });
 
         document.getElementById('frame-thickness').addEventListener('input', (e) => {
             state.frameThickness = parseFloat(e.target.value);
-            render();
+            document.getElementById('val-thick').textContent = state.frameThickness.toFixed(1);
+            requestAnimationFrame(render);
         });
         document.getElementById('frame-color').addEventListener('input', (e) => {
             state.frameColor = e.target.value;
-            render();
+            requestAnimationFrame(render);
         });
 
-        // Text Handlers
         ['date', 'year', 'location'].forEach(id => {
             document.getElementById(`text-${id}`).addEventListener('input', (e) => {
                 state[`text${id.charAt(0).toUpperCase() + id.slice(1)}`] = e.target.value;
-                render();
+                requestAnimationFrame(render);
             });
         });
         document.getElementById('text-color').addEventListener('input', (e) => {
             state.textColor = e.target.value;
-            render();
+            requestAnimationFrame(render);
         });
 
-        // Watermark Handlers
         document.getElementById('watermark-toggle').addEventListener('change', (e) => {
             state.showWatermark = e.target.checked;
-            interactionDiv.style.display = (state.showWatermark && state.image) ? 'block' : 'none';
-            render();
+            interactionDiv.style.display = (state.showWatermark && state.image && !document.getElementById('tab-watermark').classList.contains('hidden')) ? 'block' : 'none';
+            requestAnimationFrame(render);
         });
         document.getElementById('watermark-opacity').addEventListener('input', (e) => {
             state.watermarkOpacity = parseFloat(e.target.value);
-            render();
+            document.getElementById('val-op').textContent = Math.round(state.watermarkOpacity * 100) + '%';
+            requestAnimationFrame(render);
         });
         document.getElementById('watermark-size').addEventListener('input', (e) => {
             state.watermarkSize = parseFloat(e.target.value);
-            render();
+            document.getElementById('val-sz').textContent = Math.round(state.watermarkSize * 100) + '%';
+            requestAnimationFrame(render);
         });
 
-        // Custom Watermark Upload
+        // Watermark File Upload
         document.getElementById('watermark-input').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -523,22 +551,28 @@
                 const img = new Image();
                 img.onload = () => {
                     state.watermarkImage = img;
-                    render();
+                    requestAnimationFrame(render);
+                    showToast('Logo watermark berhasil diperbarui.', 'success');
                 };
                 img.src = event.target.result;
             };
             reader.readAsDataURL(file);
         });
 
-        // --- STREAMING_CHUNK: File Upload & Camera Logic... ---
+        // --- STREAMING_CHUNK: Logika Kamera dan Upload Foto... ---
 
-        // File Upload
+        // File Upload Main Image
         const uploadInput = document.getElementById('upload-input');
         document.getElementById('btn-upload-trigger').addEventListener('click', () => uploadInput.click());
         
         uploadInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
+            // Valdiasi Tipe
+            if(!file.type.startsWith('image/')) {
+                showToast('Harap pilih file gambar yang valid.', 'error');
+                return;
+            }
             loadPhotoFromFile(file);
         });
 
@@ -547,56 +581,86 @@
             reader.onload = (event) => {
                 const img = new Image();
                 img.onload = () => {
-                    stopCamera(); // Stop cam if running
+                    stopCamera(); 
                     state.image = img;
                     state.originalWidth = img.width;
                     state.originalHeight = img.height;
                     document.getElementById('no-image-text').style.display = 'none';
-                    render();
+                    
+                    // Reset styling on container just in case camera changed it
+                    canvas.style.display = 'block';
+                    requestAnimationFrame(render);
+                    showToast('Foto berhasil dimuat!', 'success');
                 };
+                img.onerror = () => showToast('Gagal memuat gambar. File mungkin rusak.', 'error');
                 img.src = event.target.result;
             };
+            reader.onerror = () => showToast('Gagal membaca file.', 'error');
             reader.readAsDataURL(file);
         }
 
-        // Camera WebRTC Logic
+        // Camera Logic
         const videoElement = document.getElementById('camera-video');
         const camControls = document.getElementById('camera-controls');
         const camStatus = document.getElementById('cam-status');
+        const btnStartCam = document.getElementById('btn-start-cam');
         
-        document.getElementById('btn-start-cam').addEventListener('click', startCamera);
+        btnStartCam.addEventListener('click', startCamera);
         document.getElementById('btn-stop-cam').addEventListener('click', stopCamera);
         
         async function startCamera() {
+            // Memberikan feedback visual saat proses
+            const originalText = btnStartCam.innerHTML;
+            btnStartCam.innerHTML = '<span class="animate-pulse">Mengakses Kamera...</span>';
+            btnStartCam.disabled = true;
+
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } 
-                });
+                // Gunakan ideal: environment agar tidak error jika tidak ada kamera belakang (terutama di PC)
+                const constraints = {
+                    video: { 
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 } 
+                    },
+                    audio: false
+                };
+                
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 state.stream = stream;
                 videoElement.srcObject = stream;
                 state.videoTrack = stream.getVideoTracks()[0];
                 
-                // Check capabilities
-                setTimeout(() => {
-                    const capabilities = state.videoTrack.getCapabilities();
-                    console.log("Camera Capabilities:", capabilities);
-                }, 500);
-
+                // Show Controls
                 camControls.classList.remove('hidden');
                 camStatus.classList.remove('hidden');
                 
-                // Hide canvas while recording, show video (styled via CSS mapping to canvas space)
+                // Sembunyikan canvas, tampilkan video memenuhi container
                 canvas.style.display = 'none';
                 videoElement.style.display = 'block';
+                videoElement.style.position = 'absolute';
                 videoElement.style.width = '100%';
                 videoElement.style.height = '100%';
                 videoElement.style.objectFit = 'contain';
+                videoElement.style.zIndex = '5';
+                
                 document.getElementById('preview-container').appendChild(videoElement);
                 document.getElementById('no-image-text').style.display = 'none';
+                interactionDiv.style.display = 'none'; // Sembunyikan interaksi drag saat kamera aktif
 
+                showToast('Kamera siap. Tekan tombol putih untuk memotret.', 'info');
+                
             } catch (err) {
-                alert("Gagal mengakses kamera. Pastikan izin diberikan.");
-                console.error(err);
+                console.error("Camera error:", err);
+                let errorMsg = "Gagal mengakses kamera.";
+                if(err.name === 'NotAllowedError') errorMsg = "Izin kamera ditolak browser. Mohon izinkan di pengaturan situs.";
+                else if(err.name === 'NotFoundError') errorMsg = "Kamera tidak ditemukan di perangkat ini.";
+                else if(err.name === 'NotReadableError') errorMsg = "Kamera sedang digunakan oleh aplikasi lain.";
+                else if(location.protocol !== 'https:' && location.hostname !== 'localhost') errorMsg = "Kamera membutuhkan koneksi HTTPS (Aman).";
+                
+                showToast(errorMsg, 'error');
+            } finally {
+                btnStartCam.innerHTML = originalText;
+                btnStartCam.disabled = false;
             }
         }
 
@@ -604,33 +668,59 @@
             if (state.stream) {
                 state.stream.getTracks().forEach(track => track.stop());
                 state.stream = null;
+                state.videoTrack = null;
             }
             camControls.classList.add('hidden');
             camStatus.classList.add('hidden');
             videoElement.style.display = 'none';
-            canvas.style.display = 'block';
+            videoElement.srcObject = null;
+            
+            if(state.image) {
+                canvas.style.display = 'block';
+                // Cek tab aktif untuk watermark
+                const isWmTab = !document.getElementById('tab-watermark').classList.contains('hidden');
+                if(state.showWatermark && isWmTab) interactionDiv.style.display = 'block';
+            } else {
+                document.getElementById('no-image-text').style.display = 'block';
+            }
+            
+            // Reset zoom/exp css
+            videoElement.style.transform = 'scale(1)';
+            videoElement.style.filter = 'none';
+            state.camZoom = 1;
+            state.camExposure = 0;
+            document.getElementById('cam-exposure').value = 0;
+            document.querySelectorAll('.cam-zoom-btn').forEach(b => {
+                b.classList.remove('bg-psc-yellow', 'text-black');
+                if(b.getAttribute('data-zoom') === '1') b.classList.add('bg-psc-yellow', 'text-black');
+            });
         }
 
-        // Camera Zoom & Exposure Control
+        // Camera Controls (Zoom & Exp)
         document.querySelectorAll('.cam-zoom-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
+                e.preventDefault();
                 const zoom = parseFloat(e.target.getAttribute('data-zoom'));
                 state.camZoom = zoom;
                 
-                // UI styling
                 document.querySelectorAll('.cam-zoom-btn').forEach(b => b.classList.remove('bg-psc-yellow', 'text-black'));
                 e.target.classList.add('bg-psc-yellow', 'text-black');
 
-                // Try hardware zoom first
                 if (state.videoTrack) {
-                    const capabilities = state.videoTrack.getCapabilities();
-                    if (capabilities.zoom) {
-                        // Map 1x, 2x, 3x to device zoom range
-                        const step = (capabilities.zoom.max - capabilities.zoom.min) / 3;
-                        const hwZoom = capabilities.zoom.min + (zoom - 1) * step;
-                        state.videoTrack.applyConstraints({ advanced: [{ zoom: Math.min(hwZoom, capabilities.zoom.max) }] }).catch(e=>console.log("HW Zoom error", e));
-                    } else {
-                        // Fallback: Software zoom via CSS transform on video element temporarily
+                    try {
+                        const capabilities = state.videoTrack.getCapabilities();
+                        if (capabilities && capabilities.zoom) {
+                            const step = (capabilities.zoom.max - capabilities.zoom.min) / 3;
+                            const hwZoom = capabilities.zoom.min + (zoom - 1) * step;
+                            state.videoTrack.applyConstraints({ advanced: [{ zoom: Math.min(hwZoom, capabilities.zoom.max) }] })
+                                .catch(err => {
+                                    console.warn("HW Zoom failed, using CSS fallback", err);
+                                    videoElement.style.transform = `scale(${zoom})`;
+                                });
+                        } else {
+                            videoElement.style.transform = `scale(${zoom})`;
+                        }
+                    } catch(err) {
                         videoElement.style.transform = `scale(${zoom})`;
                     }
                 }
@@ -642,41 +732,60 @@
             state.camExposure = exp;
             
             if (state.videoTrack) {
-                const capabilities = state.videoTrack.getCapabilities();
-                // Note: exposureCompensation requires advanced constraint
-                if (capabilities.exposureCompensation) {
-                    state.videoTrack.applyConstraints({ advanced: [{ exposureCompensation: exp }] }).catch(e=>console.log("HW Exp error", e));
-                } else {
-                    // Fallback CSS brightness
-                    const brightness = 1 + (exp * 0.3); // Map -2,2 to 0.4 - 1.6
-                    videoElement.style.filter = `brightness(${brightness})`;
+                try {
+                    const capabilities = state.videoTrack.getCapabilities();
+                    if (capabilities && capabilities.exposureCompensation) {
+                        state.videoTrack.applyConstraints({ advanced: [{ exposureCompensation: exp }] })
+                            .catch(err => {
+                                console.warn("HW Exp failed, using CSS fallback");
+                                videoElement.style.filter = `brightness(${1 + (exp * 0.3)})`;
+                            });
+                    } else {
+                        videoElement.style.filter = `brightness(${1 + (exp * 0.3)})`;
+                    }
+                } catch(err) {
+                    videoElement.style.filter = `brightness(${1 + (exp * 0.3)})`;
                 }
             }
         });
 
-        // Capture Photo
+        // Capture Logic
         document.getElementById('btn-capture').addEventListener('click', () => {
-            // Draw video to a temporary canvas to get the full res image
+            if(!videoElement.videoWidth) return;
+            
+            // Efek Flash
+            const flash = document.createElement('div');
+            flash.className = 'absolute inset-0 bg-white z-50 pointer-events-none transition-opacity duration-300';
+            document.getElementById('preview-container').appendChild(flash);
+            setTimeout(() => flash.classList.add('opacity-0'), 50);
+            setTimeout(() => flash.remove(), 400);
+
             const tempCanvas = document.createElement('canvas');
             const vw = videoElement.videoWidth;
             const vh = videoElement.videoHeight;
-            
-            // Handle software zoom cropping if hardware zoom wasn't applied
-            // (If HW zoom worked, vw/vh already contain the zoomed image)
             const zoom = state.camZoom;
+            
             tempCanvas.width = vw;
             tempCanvas.height = vh;
-            const tCtx = tempCanvas.getContext('2d');
+            const tCtx = tempCanvas.getContext('2d', { alpha: false });
             
-            // Apply software exposure if HW not supported
-            const capabilities = state.videoTrack ? state.videoTrack.getCapabilities() : {};
-            if (!capabilities.exposureCompensation) {
-                 const brightness = 1 + (state.camExposure * 0.3);
-                 tCtx.filter = `brightness(${brightness})`;
+            // Cek capabilities jika bisa untuk tahu fallback zoom perlu digambar crop
+            let needsSoftwareCrop = zoom > 1;
+            let needsSoftwareBright = state.camExposure !== 0;
+            
+            try {
+                if(state.videoTrack) {
+                    const cap = state.videoTrack.getCapabilities();
+                    if(cap && cap.zoom) needsSoftwareCrop = false;
+                    if(cap && cap.exposureCompensation) needsSoftwareBright = false;
+                }
+            } catch(e) {}
+
+            if (needsSoftwareBright) {
+                 tCtx.filter = `brightness(${1 + (state.camExposure * 0.3)})`;
             }
 
-            // Draw with crop for zoom if HW zoom not supported
-            if (!capabilities.zoom && zoom > 1) {
+            if (needsSoftwareCrop) {
                 const sw = vw / zoom;
                 const sh = vh / zoom;
                 const sx = (vw - sw) / 2;
@@ -686,7 +795,7 @@
                 tCtx.drawImage(videoElement, 0, 0, vw, vh);
             }
             
-            tCtx.filter = 'none'; // reset
+            tCtx.filter = 'none';
 
             const img = new Image();
             img.onload = () => {
@@ -694,14 +803,15 @@
                 state.originalWidth = img.width;
                 state.originalHeight = img.height;
                 stopCamera();
-                render();
+                requestAnimationFrame(render);
+                showToast('Foto berhasil ditangkap!', 'success');
             };
-            img.src = tempCanvas.toDataURL('image/jpeg', 1.0);
+            img.src = tempCanvas.toDataURL('image/jpeg', 0.95);
         });
 
 
-        // --- STREAMING_CHUNK: Core Rendering Engine ---
-        // This function draws the image, applies CSS filters, draws frames, text, and watermark
+        // --- STREAMING_CHUNK: Mesin Render Utama & Logika Interaksi... ---
+
         function render() {
             if (!state.image) return;
 
@@ -715,7 +825,6 @@
                     padB = basePad * 3.5; 
                     break;
                 case 'square':
-                    // Make final canvas 1:1, pad accordingly
                     const maxDim = Math.max(state.originalWidth, state.originalHeight);
                     padL = padR = (maxDim - state.originalWidth) / 2 + basePad;
                     padT = (maxDim - state.originalHeight) / 2 + basePad;
@@ -731,7 +840,6 @@
                     padB = basePad * 4;
                     break;
                 case 'borderless':
-                    // Minimal border
                     padT = padB = padL = padR = basePad * 0.2;
                     break;
                 case 'none':
@@ -739,29 +847,24 @@
                     padT = padB = padL = padR = 0;
             }
 
-            // Final Canvas dimensions
             canvas.width = state.originalWidth + padL + padR;
             canvas.height = state.originalHeight + padT + padB;
 
-            // 2. Draw Frame Background
-            if (state.frameType !== 'none') {
-                ctx.fillStyle = state.frameColor;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
+            // 2. Background Frame
+            ctx.fillStyle = state.frameColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 3. Draw Main Image with Filters
+            // 3. Draw Image + Filter
             ctx.save();
-            if (state.activeFilterCSS) {
-                ctx.filter = state.activeFilterCSS;
-            }
+            if (state.activeFilterCSS) ctx.filter = state.activeFilterCSS;
             ctx.drawImage(state.image, padL, padT, state.originalWidth, state.originalHeight);
             ctx.restore();
 
-            // 4. Draw Text (Typewriter style)
+            // 4. Draw Text
             if (state.frameType !== 'none' && state.frameType !== 'borderless') {
                 ctx.fillStyle = state.textColor;
-                // Font size relative to canvas width
-                const fontSize = Math.max(canvas.width * 0.02, 20);
+                // Skala font dinamis sesuai resolusi akhir
+                const fontSize = Math.max(canvas.width * 0.015, 20);
                 ctx.font = `bold ${fontSize}px "Courier New", Courier, monospace`;
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
@@ -769,11 +872,9 @@
                 const textY = canvas.height - (padB / 2);
                 const textX = padL;
 
-                // Left: Date & Year
                 let dateStr = state.textDate + (state.textDate && state.textYear ? ' ' : '') + state.textYear;
                 if(dateStr) ctx.fillText(dateStr, textX, textY);
                 
-                // Right: Location
                 if (state.textLocation) {
                     ctx.textAlign = 'right';
                     ctx.fillText(state.textLocation, canvas.width - padR, textY);
@@ -785,12 +886,10 @@
                 ctx.save();
                 ctx.globalAlpha = state.watermarkOpacity;
                 
-                // Size is relative to canvas width
                 const wmWidth = canvas.width * state.watermarkSize;
                 const aspect = state.watermarkImage.height / state.watermarkImage.width;
                 const wmHeight = wmWidth * aspect;
                 
-                // Position is 0-1 mapped to canvas bounds (minus watermark size to keep in bounds)
                 const maxX = canvas.width - wmWidth;
                 const maxY = canvas.height - wmHeight;
                 
@@ -802,10 +901,7 @@
             }
         }
 
-
-        // --- STREAMING_CHUNK: Watermark Interaction (Drag & Drop) ---
-        // Handles moving the watermark using mouse/touch on the overlay div
-        
+        // Drag Logic Watermark
         function getPointerPos(e) {
             const rect = canvas.getBoundingClientRect();
             let clientX = e.clientX;
@@ -816,7 +912,7 @@
                 clientY = e.touches[0].clientY;
             }
             
-            // Calculate scale based on object-fit: contain logic
+            // Map from CSS screen size (object-fit: contain) to actual canvas pixels
             const canvasRatio = canvas.width / canvas.height;
             const containerRatio = rect.width / rect.height;
             
@@ -826,99 +922,101 @@
             let offsetY = 0;
 
             if (canvasRatio > containerRatio) {
-                // Letterboxed top/bottom
                 displayHeight = rect.width / canvasRatio;
                 offsetY = (rect.height - displayHeight) / 2;
             } else {
-                // Pillarboxed left/right
                 displayWidth = rect.height * canvasRatio;
                 offsetX = (rect.width - displayWidth) / 2;
             }
 
-            // Map click to internal canvas coordinates
             const x = ((clientX - rect.left - offsetX) / displayWidth) * canvas.width;
             const y = ((clientY - rect.top - offsetY) / displayHeight) * canvas.height;
             
             return { x, y };
         }
 
+        function handleDragStart(e) {
+            // Hanya cegah default jika ini touch, untuk click biarkan agar elemen lain tidak rusak
+            if(e.type === 'touchstart') e.preventDefault(); 
+            state.isDraggingWatermark = true;
+            updateWatermarkPos(e);
+        }
+
         function updateWatermarkPos(e) {
             if (!state.isDraggingWatermark || !state.image || !state.showWatermark) return;
-            e.preventDefault();
-            
+            if(e.type === 'touchmove') e.preventDefault(); // Mencegah scrolling saat drag
+
             const pos = getPointerPos(e);
             
-            // Size mapping
             const wmWidth = canvas.width * state.watermarkSize;
             const aspect = state.watermarkImage.height / state.watermarkImage.width;
             const wmHeight = wmWidth * aspect;
             
-            const maxX = canvas.width - wmWidth;
-            const maxY = canvas.height - wmHeight;
+            const maxX = Math.max(1, canvas.width - wmWidth);
+            const maxY = Math.max(1, canvas.height - wmHeight);
             
-            // Center the watermark on mouse, then normalize to 0-1
+            // Posisi tengah pointer di logo
             let newX = (pos.x - (wmWidth/2)) / maxX;
             let newY = (pos.y - (wmHeight/2)) / maxY;
             
-            // Clamp
             newX = Math.max(0, Math.min(1, newX));
             newY = Math.max(0, Math.min(1, newY));
             
             state.watermarkPos = { x: newX, y: newY };
-            
-            // Use requestAnimationFrame for smooth drawing
             requestAnimationFrame(render);
         }
 
-        interactionDiv.addEventListener('mousedown', (e) => { state.isDraggingWatermark = true; updateWatermarkPos(e); });
+        interactionDiv.addEventListener('mousedown', handleDragStart);
         interactionDiv.addEventListener('mousemove', updateWatermarkPos);
         window.addEventListener('mouseup', () => { state.isDraggingWatermark = false; });
         
-        interactionDiv.addEventListener('touchstart', (e) => { state.isDraggingWatermark = true; updateWatermarkPos(e); }, {passive: false});
+        // Touch events dengan passive: false agar bisa preventDefault
+        interactionDiv.addEventListener('touchstart', handleDragStart, {passive: false});
         interactionDiv.addEventListener('touchmove', updateWatermarkPos, {passive: false});
         window.addEventListener('touchend', () => { state.isDraggingWatermark = false; });
+        window.addEventListener('touchcancel', () => { state.isDraggingWatermark = false; });
 
-        // --- STREAMING_CHUNK: High-Res Export & Download ---
+        // --- STREAMING_CHUNK: Fungsi Download Akhir ---
+        
         document.getElementById('btn-download').addEventListener('click', () => {
             if (!state.image) {
-                alert("Silakan upload foto atau ambil gambar dari kamera terlebih dahulu.");
+                showToast("Silakan upload foto atau ambil gambar dari kamera terlebih dahulu.", 'warning');
                 return;
             }
 
-            // Ensure rendering is up to date
+            // Memastikan render terakhir sempurna
             render();
             
-            // Convert to Blob for memory efficiency on high-res images
+            // Proses download menggunakan Blob untuk mencegah crash memori pada HP jika res tinggi
             canvas.toBlob((blob) => {
                 if(!blob) {
-                    alert("Terjadi kesalahan saat memproses gambar.");
+                    showToast("Gagal memproses gambar untuk diunduh.", 'error');
                     return;
                 }
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.style.display = 'none';
                 a.href = url;
-                // Generate distinct filename
+                
                 const date = new Date();
-                const fname = `PSC_Export_${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}_${date.getTime()}.jpg`;
+                const fname = `PSC_${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}_${date.getTime()}.jpg`;
                 a.download = fname;
                 
                 document.body.appendChild(a);
                 a.click();
                 
-                // Cleanup
+                showToast(`Gambar berhasil diunduh! (${fname})`, 'success');
+
                 setTimeout(() => {
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
-                }, 100);
-            }, 'image/jpeg', 0.95); // High quality JPG
+                }, 200);
+            }, 'image/jpeg', 0.95); // Kualitas 95% 
         });
 
-        // Window Resize Handler (ensure canvas stays crisp visually)
+        // Resize observer untuk render ulang agar tidak terlihat blur saat orientasi hp berubah
         window.addEventListener('resize', () => {
-            if (state.image) {
-                requestAnimationFrame(render);
-            }
+            if (state.image) requestAnimationFrame(render);
         });
 
     </script>
