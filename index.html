@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Photo Style Collection</title>
+    <title>Photo Style Collection Pro</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -95,7 +95,7 @@
             top: 0; left: 0; right: 0; bottom: 0;
             cursor: grab;
             z-index: 10;
-            touch-action: none; /* Mencegah scroll halaman saat drag di HP */
+            touch-action: none;
         }
         #watermark-interaction:active { cursor: grabbing; }
 
@@ -114,7 +114,7 @@
     <header class="bg-psc-dark border-b border-gray-800 p-3 md:p-4 flex flex-col md:flex-row justify-between items-center shadow-md z-20 gap-3 shrink-0">
         <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded bg-psc-yellow text-psc-black flex items-center justify-center font-bold text-xl">P</div>
-            <h1 class="text-lg md:text-xl font-bold tracking-wider text-psc-light truncate">PHOTO <span class="text-psc-yellow">STYLE</span></h1>
+            <h1 class="text-lg md:text-xl font-bold tracking-wider text-psc-light truncate">PHOTO <span class="text-psc-yellow">STYLE</span> <span class="text-[10px] text-gray-500 font-normal">PRO</span></h1>
         </div>
         <div class="flex gap-2 md:gap-3 w-full md:w-auto">
             <button id="btn-upload-trigger" class="flex-1 md:flex-none bg-gray-800 hover:bg-gray-700 text-white px-3 md:px-4 py-2 rounded text-xs md:text-sm font-semibold transition border border-gray-600">
@@ -127,12 +127,10 @@
         </div>
     </header>
 
-    <!-- Tempat untuk notifikasi (menggantikan alert) -->
     <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 w-11/12 max-w-md pointer-events-none"></div>
 
     <main class="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
         
-        <!-- Main Preview Area -->
         <section class="w-full h-[55%] md:h-full md:flex-1 relative bg-black flex flex-col shrink-0">
             <div id="preview-container">
                 <span id="no-image-text" class="text-gray-500 text-sm md:text-base absolute z-0 select-none pointer-events-none text-center px-4">
@@ -142,7 +140,6 @@
                 <div id="watermark-interaction" style="display:none;"></div>
             </div>
             
-            <!-- Quick Camera Tools -->
             <div id="camera-controls" class="hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-psc-dark/90 backdrop-blur border border-gray-700 p-2 md:p-3 rounded-xl flex items-center gap-2 md:gap-4 z-20 shadow-xl w-11/12 md:w-auto justify-between md:justify-center">
                 <div class="flex flex-col text-[10px] md:text-xs text-gray-400">
                     <label class="mb-1 hidden md:block">Exposure</label>
@@ -159,10 +156,8 @@
             <video id="camera-video" autoplay playsinline></video>
         </section>
 
-        <!-- Controls Sidebar -->
-        <aside class="w-full h-[45%] md:h-full md:w-96 bg-psc-dark border-t md:border-t-0 md:border-l border-gray-800 flex flex-col z-10 shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.3)] md:shadow-2xl">
+        <aside class="w-full h-[45%] md:h-full md:w-[400px] bg-psc-dark border-t md:border-t-0 md:border-l border-gray-800 flex flex-col z-10 shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.3)] md:shadow-2xl">
             
-            <!-- Tabs -->
             <div class="flex border-b border-gray-800 bg-black text-xs font-semibold overflow-x-auto shrink-0 hide-scrollbar">
                 <button class="tab-btn min-w-[70px] flex-1 py-3 px-2 text-psc-yellow border-b-2 border-psc-yellow whitespace-nowrap transition-colors" data-target="tab-camera">Kamera</button>
                 <button class="tab-btn min-w-[70px] flex-1 py-3 px-2 text-gray-400 hover:text-white whitespace-nowrap transition-colors" data-target="tab-filters">Filter</button>
@@ -171,7 +166,6 @@
                 <button class="tab-btn min-w-[70px] flex-1 py-3 px-2 text-gray-400 hover:text-white whitespace-nowrap transition-colors" data-target="tab-watermark">Logo</button>
             </div>
 
-            <!-- Tab Contents -->
             <div class="flex-1 overflow-y-auto p-4 md:p-5 relative">
                 
                 <!-- CAMERA TAB -->
@@ -185,52 +179,69 @@
                     <div id="cam-status" class="text-xs text-psc-yellow hidden bg-yellow-900/20 p-2 rounded border border-yellow-900/50 text-center">Kamera aktif. Gunakan kontrol di area gambar.</div>
                 </div>
 
-                <!-- FILTERS TAB -->
+                <!-- FILTERS TAB (DIPERBARUI) -->
                 <div id="tab-filters" class="tab-content hidden flex flex-col h-full">
                     <div class="mb-3 shrink-0">
                         <select id="filter-category" class="w-full bg-black border border-gray-700 text-white p-2.5 rounded focus:border-psc-yellow focus:outline-none text-sm appearance-none">
-                            <option value="pro">Pro Auto Enhance (10)</option>
-                            <option value="cinematic">Cinematic Style (10)</option>
-                            <option value="film">Film Style (10)</option>
-                            <option value="retro">Retro Vibes (10)</option>
-                            <option value="vintage">Vintage Classic (10)</option>
-                            <option value="leica">Kamera: Leica (10)</option>
-                            <option value="fuji">Kamera: Fujifilm (10)</option>
-                            <option value="kodak">Kamera: Kodak (10)</option>
-                            <option value="canon">Kamera: Canon (10)</option>
-                            <option value="sony">Kamera: Sony (10)</option>
+                            <option value="premium">Premium / Instagram Styles</option>
+                            <option value="film">Classic Film Cameras</option>
+                            <option value="cinematic">Cinematic Grading</option>
+                            <option value="vintage">Vintage & Retro</option>
                         </select>
                     </div>
                     <div class="flex-1 overflow-y-auto pr-1 pb-4">
-                        <div id="filter-grid" class="grid grid-cols-2 gap-2"></div>
+                        <div id="filter-grid" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
                     </div>
                     <div class="pt-3 border-t border-gray-800 mt-auto shrink-0 bg-psc-dark">
                         <button id="btn-reset-filter" class="w-full bg-red-900/30 text-red-400 border border-red-900 hover:bg-red-900/50 py-2.5 rounded text-sm transition font-semibold">Hapus Filter</button>
                     </div>
                 </div>
 
-                <!-- FRAME TAB -->
+                <!-- FRAME TAB (DIPERBARUI LEBIH LELUASA) -->
                 <div id="tab-frame" class="tab-content hidden space-y-6">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-300 mb-3">Jenis Frame Polaroid</label>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            <button class="frame-btn active border border-gray-700 bg-gray-800 p-2.5 rounded text-xs hover:border-psc-yellow transition" data-type="none">Tanpa Frame</button>
-                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2.5 rounded text-xs hover:border-psc-yellow transition" data-type="classic">Classic</button>
-                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2.5 rounded text-xs hover:border-psc-yellow transition" data-type="square">Square 1:1</button>
-                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2.5 rounded text-xs hover:border-psc-yellow transition" data-type="wide">Wide</button>
-                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2.5 rounded text-xs hover:border-psc-yellow transition" data-type="tall">Tall Mini</button>
-                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2.5 rounded text-xs hover:border-psc-yellow transition" data-type="borderless">Modern Edge</button>
+                        <label class="block text-sm font-semibold text-gray-300 mb-3">Preset Frame (Auto-Kalkulasi)</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button class="frame-preset-btn active border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow transition" data-type="none">Original</button>
+                            <button class="frame-preset-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow transition" data-type="classic">Polaroid</button>
+                            <button class="frame-preset-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow transition" data-type="square">Square 1:1</button>
+                            <button class="frame-preset-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow transition" data-type="wide">Wide Frame</button>
+                            <button class="frame-preset-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow transition" data-type="tall">Tall Frame</button>
+                            <button class="frame-preset-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow transition" data-type="borderless">Edge</button>
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-300 mb-3 flex justify-between">Ketebalan <span id="val-thick" class="text-psc-yellow font-normal">1.0</span></label>
-                        <input type="range" id="frame-thickness" min="0.5" max="3" step="0.1" value="1">
+                    
+                    <div class="bg-black/40 p-3 rounded-lg border border-gray-800">
+                        <label class="block text-sm font-semibold text-psc-yellow mb-3 border-b border-gray-700 pb-2">Kontrol Ketebalan Bebas</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- Slider Atas -->
+                            <div>
+                                <label class="text-[11px] text-gray-400 block mb-1 flex justify-between">Atas <span id="val-pad-t" class="text-white">0.0</span></label>
+                                <input type="range" class="pad-slider" data-target="padT" id="pad-top" min="0" max="15" step="0.1" value="0">
+                            </div>
+                            <!-- Slider Bawah -->
+                            <div>
+                                <label class="text-[11px] text-gray-400 block mb-1 flex justify-between">Bawah <span id="val-pad-b" class="text-white">0.0</span></label>
+                                <input type="range" class="pad-slider" data-target="padB" id="pad-bottom" min="0" max="15" step="0.1" value="0">
+                            </div>
+                            <!-- Slider Kiri -->
+                            <div>
+                                <label class="text-[11px] text-gray-400 block mb-1 flex justify-between">Kiri <span id="val-pad-l" class="text-white">0.0</span></label>
+                                <input type="range" class="pad-slider" data-target="padL" id="pad-left" min="0" max="15" step="0.1" value="0">
+                            </div>
+                            <!-- Slider Kanan -->
+                            <div>
+                                <label class="text-[11px] text-gray-400 block mb-1 flex justify-between">Kanan <span id="val-pad-r" class="text-white">0.0</span></label>
+                                <input type="range" class="pad-slider" data-target="padR" id="pad-right" min="0" max="15" step="0.1" value="0">
+                            </div>
+                        </div>
                     </div>
+
                     <div>
                         <label class="block text-sm font-semibold text-gray-300 mb-3">Warna Frame</label>
                         <div class="flex items-center gap-4 bg-gray-900 p-2 rounded border border-gray-800">
                             <input type="color" id="frame-color" value="#ffffff" class="w-12 h-12 rounded cursor-pointer bg-transparent border-0 p-1">
-                            <span class="text-[11px] md:text-xs text-gray-400 flex-1">Pilih warna solid untuk dasar polaroid.</span>
+                            <span class="text-[11px] md:text-xs text-gray-400 flex-1">Pilih warna solid untuk dasar frame.</span>
                         </div>
                     </div>
                 </div>
@@ -268,11 +279,11 @@
                         </div>
                         <div>
                             <label class="block text-[11px] font-semibold text-gray-300 mb-1 flex justify-between">Geser Vertikal (Y) <span id="val-text-y" class="text-psc-yellow">0%</span></label>
-                            <input type="range" id="text-pos-y" min="-50" max="50" step="1" value="0">
+                            <input type="range" id="text-pos-y" min="-100" max="100" step="1" value="0">
                         </div>
                         <div>
                             <label class="block text-[11px] font-semibold text-gray-300 mb-1 flex justify-between">Geser Horizontal (X) <span id="val-text-x" class="text-psc-yellow">0%</span></label>
-                            <input type="range" id="text-pos-x" min="-50" max="50" step="1" value="0">
+                            <input type="range" id="text-pos-x" min="-100" max="100" step="1" value="0">
                         </div>
                     </div>
 
@@ -345,8 +356,7 @@
             }, 3500);
         }
 
-        // --- STREAMING_CHUNK: Inisialisasi State Aplikasi Terbaru... ---
-        // --- CORE STATE ---
+        // --- STREAMING_CHUNK: Inisialisasi State & Data Filter Premium... ---
         const state = {
             image: null, 
             originalWidth: 0,
@@ -361,20 +371,22 @@
             // Filter
             activeFilterCSS: '',
             
-            // Frame
-            frameType: 'none', 
-            frameThickness: 1.0,
+            // Frame (Baru: Lebih Fleksibel)
+            padT: 0,
+            padB: 0,
+            padL: 0,
+            padR: 0,
             frameColor: '#ffffff',
             
-            // Text Variables (Diperbarui dengan kontrol penuh)
+            // Text Variables
             textDate: '',
             textYear: '',
             textLocation: '',
             textColor: '#222222',
-            textAlign: 'split',  // 'split', 'left', 'center', 'right'
-            textSize: 1.0,       // scale multiplier
-            textOffsetY: 0,      // % movement on Y axis
-            textOffsetX: 0,      // % movement on X axis
+            textAlign: 'split',  
+            textSize: 1.0,       
+            textOffsetY: 0,      
+            textOffsetX: 0,      
             
             // Watermark
             showWatermark: true,
@@ -419,31 +431,45 @@
         }
         createDefaultLogo();
 
+        // --- Filter Berkualitas Tinggi (Curated CSS Filters) ---
         const filterDatabase = {
-            pro: [], cinematic: [], film: [], retro: [], vintage: [],
-            leica: [], fuji: [], kodak: [], canon: [], sony: []
+            premium: [
+                { name: "Normal", css: "none" },
+                { name: "Clarendon", css: "contrast(1.2) saturate(1.35) brightness(1.1)" },
+                { name: "Gingham", css: "brightness(1.05) hue-rotate(-10deg) contrast(0.9) saturate(1.1)" },
+                { name: "Moon (B&W)", css: "grayscale(1) contrast(1.1) brightness(1.1)" },
+                { name: "Lark", css: "contrast(0.9) saturate(1.3) brightness(1.1) sepia(0.2)" },
+                { name: "Reyes", css: "sepia(0.22) brightness(1.1) contrast(0.85) saturate(0.75)" },
+                { name: "Juno", css: "saturate(1.4) contrast(1.15) brightness(1.1) sepia(0.1)" },
+                { name: "Slumber", css: "saturate(0.66) brightness(1.05) contrast(1.05) sepia(0.22)" },
+                { name: "Crema", css: "sepia(0.5) contrast(1.15) brightness(1.15)" },
+                { name: "Ludwig", css: "saturate(1.2) contrast(1.05) brightness(1.05) sepia(0.1)" }
+            ],
+            film: [
+                { name: "Normal", css: "none" },
+                { name: "Kodak Portra", css: "contrast(1.1) saturate(1.2) sepia(0.1) brightness(1.05)" },
+                { name: "Fuji Superia", css: "contrast(1.15) saturate(1.3) hue-rotate(-5deg)" },
+                { name: "Agfa Vista", css: "contrast(1.2) saturate(1.4) sepia(0.15)" },
+                { name: "Ilford HP5", css: "grayscale(1) contrast(1.3) brightness(0.9)" },
+                { name: "Polaroid", css: "sepia(0.3) contrast(1.2) brightness(1.1) saturate(0.8)" }
+            ],
+            cinematic: [
+                { name: "Normal", css: "none" },
+                { name: "Teal & Orange", css: "sepia(0.2) hue-rotate(-15deg) saturate(1.5) contrast(1.2)" },
+                { name: "Matrix Green", css: "sepia(0.8) hue-rotate(70deg) saturate(1.5) contrast(1.2)" },
+                { name: "Cyberpunk", css: "saturate(2) contrast(1.3) hue-rotate(30deg)" },
+                { name: "Film Noir", css: "grayscale(1) contrast(1.5) brightness(0.8)" }
+            ],
+            vintage: [
+                { name: "Normal", css: "none" },
+                { name: "1977", css: "sepia(0.5) hue-rotate(-30deg) saturate(1.4) contrast(1.1)" },
+                { name: "Earlybird", css: "sepia(0.25) contrast(1.25) brightness(0.9) hue-rotate(-15deg)" },
+                { name: "Toaster", css: "sepia(0.4) contrast(1.5) brightness(0.9) hue-rotate(-15deg)" },
+                { name: "Walden", css: "sepia(0.3) contrast(0.8) brightness(1.1) saturate(1.6) hue-rotate(-10deg)" }
+            ]
         };
 
-        function generateFilters(category, count) {
-            for(let i=1; i<=count; i++) {
-                let css = '';
-                if (category === 'pro') css = `contrast(${105 + i*2}%) saturate(${105 + i*3}%) brightness(${98 + i}%)`;
-                else if (category === 'cinematic') css = `sepia(${10+i*2}%) hue-rotate(${-10+i}deg) contrast(${110+i*3}%) saturate(${80+i*4}%) brightness(${90+i*2}%)`;
-                else if (category === 'film') css = `contrast(${90+i*3}%) saturate(${70+i*5}%) sepia(${20+i}%) brightness(${100+i}%) hue-rotate(${i*2}deg)`;
-                else if (category === 'retro') css = `sepia(${50+i*5}%) contrast(${120-i*2}%) saturate(${150-i*5}%) hue-rotate(${-30+i*4}deg)`;
-                else if (category === 'vintage') css = `grayscale(${30+i*5}%) sepia(${40+i*3}%) contrast(${85+i*2}%) brightness(${110-i}%)`;
-                else if (category === 'leica') css = `contrast(${115+i}%) saturate(${110+i*2}%) grayscale(${i}%) sepia(${i*2}%)`;
-                else if (category === 'fuji') css = `saturate(${120-i}%) contrast(${105+i*2}%) hue-rotate(${-5+i}deg) sepia(${5+i}%)`;
-                else if (category === 'kodak') css = `sepia(${15+i*2}%) saturate(${130-i*2}%) contrast(${95+i}%) brightness(${105-i}%) hue-rotate(${-10+i}deg)`;
-                else if (category === 'canon') css = `saturate(${115+i*2}%) contrast(${100+i*2}%) sepia(${5+i}%) hue-rotate(${-2-i}deg)`;
-                else if (category === 'sony') css = `contrast(${120+i}%) saturate(${105+i}%) hue-rotate(${5+i}deg) sepia(${i}%) brightness(${95+i}%)`;
-                
-                filterDatabase[category].push({ name: `${category.charAt(0).toUpperCase() + category.slice(1)} ${i}`, css: css });
-            }
-        }
-        Object.keys(filterDatabase).forEach(key => generateFilters(key, 10));
-
-        // --- STREAMING_CHUNK: Setup Event Listeners untuk UI Teks Baru... ---
+        // --- STREAMING_CHUNK: Setup Event Listeners UI... ---
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.tab-btn').forEach(b => {
@@ -472,52 +498,129 @@
             filterDatabase[category].forEach((f) => {
                 const btn = document.createElement('button');
                 btn.className = 'filter-btn bg-gray-800 border border-gray-700 text-gray-300 text-xs py-3 px-1 rounded hover:border-psc-yellow focus:outline-none w-full text-center truncate';
-                if(state.activeFilterCSS === f.css) btn.classList.add('active');
+                if(state.activeFilterCSS === f.css || (f.css === 'none' && state.activeFilterCSS === '')) btn.classList.add('active');
                 btn.textContent = f.name;
                 btn.onclick = () => {
                     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                    state.activeFilterCSS = f.css;
+                    state.activeFilterCSS = f.css === 'none' ? '' : f.css;
                     requestAnimationFrame(render);
                 };
                 filterGrid.appendChild(btn);
             });
         }
         document.getElementById('filter-category').addEventListener('change', (e) => renderFilterButtons(e.target.value));
-        renderFilterButtons('pro'); 
+        renderFilterButtons('premium'); 
         
         document.getElementById('btn-reset-filter').addEventListener('click', () => {
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             state.activeFilterCSS = '';
+            renderFilterButtons(document.getElementById('filter-category').value); // Re-render to highlight 'Normal'
             requestAnimationFrame(render);
             showToast('Filter telah dihapus.', 'info');
         });
 
-        document.querySelectorAll('.frame-btn').forEach(btn => {
+        // ------------------ LOGIKA FRAME LELUASA BARU ------------------
+        
+        function updateSlidersFromState() {
+            document.getElementById('pad-top').value = state.padT;
+            document.getElementById('pad-bottom').value = state.padB;
+            document.getElementById('pad-left').value = state.padL;
+            document.getElementById('pad-right').value = state.padR;
+            
+            document.getElementById('val-pad-t').textContent = state.padT.toFixed(1);
+            document.getElementById('val-pad-b').textContent = state.padB.toFixed(1);
+            document.getElementById('val-pad-l').textContent = state.padL.toFixed(1);
+            document.getElementById('val-pad-r').textContent = state.padR.toFixed(1);
+        }
+
+        function applyFramePreset(type) {
+            if (!state.image) {
+                showToast("Silakan upload foto terlebih dahulu untuk melihat efek.", 'warning');
+                return;
+            }
+
+            const maxDim = Math.max(state.originalWidth, state.originalHeight);
+            // Base padding calculation logic
+            
+            switch(type) {
+                case 'none': state.padT=0; state.padB=0; state.padL=0; state.padR=0; break;
+                case 'classic': state.padT=1; state.padB=4.5; state.padL=1; state.padR=1; break;
+                case 'wide': state.padT=1.5; state.padB=1.5; state.padL=4; state.padR=4; break;
+                case 'tall': state.padT=1.5; state.padB=5; state.padL=0.5; state.padR=0.5; break;
+                case 'borderless': state.padT=0.3; state.padB=0.3; state.padL=0.3; state.padR=0.3; break;
+                case 'square':
+                    // Kalkulasi otomatis agar menjadi kotak 1:1
+                    const baseUnit = maxDim * 0.05; 
+                    const targetDim = maxDim + (baseUnit * 2); // Ukuran minimal frame
+                    const diffX = targetDim - state.originalWidth;
+                    const diffY = targetDim - state.originalHeight;
+                    
+                    state.padL = (diffX / 2) / baseUnit;
+                    state.padR = (diffX / 2) / baseUnit;
+                    
+                    // Beri sedikit porsi lebih ke bawah agar estetis mirip polaroid square
+                    state.padT = (diffY * 0.4) / baseUnit; 
+                    state.padB = (diffY * 0.6) / baseUnit; 
+                    break;
+            }
+            
+            // Clamping value agar tidak error di UI
+            state.padT = Math.max(0, Math.min(15, state.padT));
+            state.padB = Math.max(0, Math.min(15, state.padB));
+            state.padL = Math.max(0, Math.min(15, state.padL));
+            state.padR = Math.max(0, Math.min(15, state.padR));
+
+            updateSlidersFromState();
+            requestAnimationFrame(render);
+        }
+
+        document.querySelectorAll('.frame-preset-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.frame-btn').forEach(b => {
+                // UI Highlight
+                document.querySelectorAll('.frame-preset-btn').forEach(b => {
                     b.classList.remove('border-psc-yellow', 'text-psc-yellow');
                     b.classList.add('border-gray-700');
                 });
                 const target = e.currentTarget;
                 target.classList.remove('border-gray-700');
                 target.classList.add('border-psc-yellow', 'text-psc-yellow');
-                state.frameType = target.getAttribute('data-type');
+                
+                applyFramePreset(target.getAttribute('data-type'));
+            });
+        });
+
+        // Event listener untuk individual sliders (Kontrol Bebas)
+        document.querySelectorAll('.pad-slider').forEach(slider => {
+            slider.addEventListener('input', (e) => {
+                const targetState = e.target.getAttribute('data-target');
+                const val = parseFloat(e.target.value);
+                state[targetState] = val;
+                
+                // Update text label
+                let idText = '';
+                if(targetState === 'padT') idText = 'val-pad-t';
+                if(targetState === 'padB') idText = 'val-pad-b';
+                if(targetState === 'padL') idText = 'val-pad-l';
+                if(targetState === 'padR') idText = 'val-pad-r';
+                document.getElementById(idText).textContent = val.toFixed(1);
+                
+                // Hapus highlight preset karena user sudah custom
+                document.querySelectorAll('.frame-preset-btn').forEach(b => {
+                    b.classList.remove('border-psc-yellow', 'text-psc-yellow');
+                    b.classList.add('border-gray-700');
+                });
+
                 requestAnimationFrame(render);
             });
         });
 
-        document.getElementById('frame-thickness').addEventListener('input', (e) => {
-            state.frameThickness = parseFloat(e.target.value);
-            document.getElementById('val-thick').textContent = state.frameThickness.toFixed(1);
-            requestAnimationFrame(render);
-        });
         document.getElementById('frame-color').addEventListener('input', (e) => {
             state.frameColor = e.target.value;
             requestAnimationFrame(render);
         });
 
-        // ------------------ NEW TEXT EVENT LISTENERS ------------------
+        // ------------------ TEXT EVENT LISTENERS ------------------
         ['date', 'year', 'location'].forEach(id => {
             document.getElementById(`text-${id}`).addEventListener('input', (e) => {
                 state[`text${id.charAt(0).toUpperCase() + id.slice(1)}`] = e.target.value;
@@ -525,7 +628,6 @@
             });
         });
 
-        // Text Alignment Style
         document.querySelectorAll('.text-align-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.text-align-btn').forEach(b => {
@@ -540,7 +642,6 @@
             });
         });
 
-        // Text Position & Size Sliders
         document.getElementById('text-size').addEventListener('input', (e) => {
             state.textSize = parseFloat(e.target.value);
             document.getElementById('val-text-size').textContent = state.textSize.toFixed(1) + 'x';
@@ -556,14 +657,12 @@
             document.getElementById('val-text-x').textContent = (state.textOffsetX > 0 ? '+' : '') + state.textOffsetX + '%';
             requestAnimationFrame(render);
         });
-
         document.getElementById('text-color').addEventListener('input', (e) => {
             state.textColor = e.target.value;
             requestAnimationFrame(render);
         });
 
-        // -------------------------------------------------------------
-
+        // ------------------ WATERMARK LISTENERS ------------------
         document.getElementById('watermark-toggle').addEventListener('change', (e) => {
             state.showWatermark = e.target.checked;
             interactionDiv.style.display = (state.showWatermark && state.image && !document.getElementById('tab-watermark').classList.contains('hidden')) ? 'block' : 'none';
@@ -596,7 +695,7 @@
             reader.readAsDataURL(file);
         });
 
-        // --- STREAMING_CHUNK: Modul Kamera & Manajemen File Gambar... ---
+        // --- STREAMING_CHUNK: Modul Kamera & Manajemen File... ---
 
         const uploadInput = document.getElementById('upload-input');
         document.getElementById('btn-upload-trigger').addEventListener('click', () => uploadInput.click());
@@ -620,6 +719,11 @@
                     state.image = img;
                     state.originalWidth = img.width;
                     state.originalHeight = img.height;
+                    
+                    // Reset to none or classic on new image load so it looks good immediately
+                    applyFramePreset('none');
+                    document.querySelectorAll('.frame-preset-btn')[0].click(); // Simulate clicking 'Original'
+
                     document.getElementById('no-image-text').style.display = 'none';
                     canvas.style.display = 'block';
                     requestAnimationFrame(render);
@@ -819,6 +923,10 @@
                 state.originalWidth = img.width;
                 state.originalHeight = img.height;
                 stopCamera();
+                
+                applyFramePreset('none');
+                document.querySelectorAll('.frame-preset-btn')[0].click(); 
+
                 requestAnimationFrame(render);
                 showToast('Foto berhasil ditangkap!', 'success');
             };
@@ -826,80 +934,56 @@
         });
 
 
-        // --- STREAMING_CHUNK: Proses Render Ulang dengan Teks Leluasa... ---
+        // --- STREAMING_CHUNK: Engine Render Utama... ---
 
         function render() {
             if (!state.image) return;
 
-            // 1. Calculate Frame Layout
-            let padT = 0, padB = 0, padL = 0, padR = 0;
-            const basePad = Math.max(state.originalWidth, state.originalHeight) * 0.05 * state.frameThickness;
+            // 1. Calculate Custom Frame Padding based on Sliders
+            const basePad = Math.max(state.originalWidth, state.originalHeight) * 0.05;
+            
+            const pixelPadT = basePad * state.padT;
+            const pixelPadB = basePad * state.padB;
+            const pixelPadL = basePad * state.padL;
+            const pixelPadR = basePad * state.padR;
 
-            switch(state.frameType) {
-                case 'classic': 
-                    padT = padL = padR = basePad; 
-                    padB = basePad * 3.5; 
-                    break;
-                case 'square':
-                    const maxDim = Math.max(state.originalWidth, state.originalHeight);
-                    padL = padR = (maxDim - state.originalWidth) / 2 + basePad;
-                    padT = (maxDim - state.originalHeight) / 2 + basePad;
-                    padB = padT + basePad * 2; 
-                    break;
-                case 'wide':
-                    padT = padB = basePad;
-                    padL = padR = basePad * 2;
-                    break;
-                case 'tall':
-                    padL = padR = basePad;
-                    padT = basePad;
-                    padB = basePad * 4;
-                    break;
-                case 'borderless':
-                    padT = padB = padL = padR = basePad * 0.2;
-                    break;
-                case 'none':
-                default:
-                    padT = padB = padL = padR = 0;
-            }
-
-            canvas.width = state.originalWidth + padL + padR;
-            canvas.height = state.originalHeight + padT + padB;
+            canvas.width = state.originalWidth + pixelPadL + pixelPadR;
+            canvas.height = state.originalHeight + pixelPadT + pixelPadB;
 
             // 2. Background Frame
             ctx.fillStyle = state.frameColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 3. Draw Image + Filter
+            // 3. Draw Image + Filter Premium
             ctx.save();
             if (state.activeFilterCSS) ctx.filter = state.activeFilterCSS;
-            ctx.drawImage(state.image, padL, padT, state.originalWidth, state.originalHeight);
+            ctx.drawImage(state.image, pixelPadL, pixelPadT, state.originalWidth, state.originalHeight);
             ctx.restore();
 
-            // 4. Draw Text (FLEXIBLE POSITIONING)
-            if (state.frameType !== 'none' && state.frameType !== 'borderless') {
+            // 4. Draw Text 
+            const isFrameVisible = (state.padT > 0 || state.padB > 0 || state.padL > 0 || state.padR > 0);
+            
+            if (isFrameVisible) {
                 ctx.fillStyle = state.textColor;
                 
-                // Menghitung Base Font Size dan dikalikan dengan slider ukuran (scale)
                 const baseFontSize = Math.max(canvas.width * 0.015, 12);
                 const fontSize = baseFontSize * state.textSize;
                 
                 ctx.font = `bold ${fontSize}px "Courier New", Courier, monospace`;
                 ctx.textBaseline = 'middle';
                 
-                // Menghitung Posisi Y (Default berada di tengah border bawah)
-                const defaultY = canvas.height - (padB / 2);
-                // Tambahan pergeseran Y berdasarkan slider (persentase dari tinggi keseluruhan)
+                // Kalkulasi dasar Y: Tempatkan di tengah-tengah margin bawah jika ada, jika tidak, di bagian bawah gambar
+                let defaultY = canvas.height - (pixelPadB / 2);
+                if (pixelPadB <= 0) defaultY = canvas.height - 20; // fallback aman
+                
                 const textY = defaultY + (canvas.height * (state.textOffsetY / 100));
 
                 const dateStr = [state.textDate, state.textYear].filter(Boolean).join(' ');
                 const locStr = state.textLocation;
 
-                // Mode Pemisahan Kiri Kanan (Classic Split)
                 if (state.textAlign === 'split') {
-                    // Tambahan pergeseran X pada base margin L & R
-                    const leftX = padL + (canvas.width * (state.textOffsetX / 100));
-                    const rightX = canvas.width - padR + (canvas.width * (state.textOffsetX / 100));
+                    const leftX = pixelPadL + (canvas.width * (state.textOffsetX / 100)) + 10;
+                    const rightX = canvas.width - pixelPadR + (canvas.width * (state.textOffsetX / 100)) - 10;
 
                     if (dateStr) {
                         ctx.textAlign = 'left';
@@ -910,15 +994,14 @@
                         ctx.fillText(locStr, rightX, textY);
                     }
                 } 
-                // Mode Menyatukan Teks (Kiri, Tengah, Kanan)
                 else {
                     const combinedText = [dateStr, locStr].filter(Boolean).join(dateStr && locStr ? ' • ' : '');
                     if (combinedText) {
-                        ctx.textAlign = state.textAlign; // 'left', 'center', 'right'
+                        ctx.textAlign = state.textAlign; 
                         
                         let basePosX;
-                        if(state.textAlign === 'left') basePosX = padL;
-                        else if(state.textAlign === 'right') basePosX = canvas.width - padR;
+                        if(state.textAlign === 'left') basePosX = pixelPadL + 10;
+                        else if(state.textAlign === 'right') basePosX = canvas.width - pixelPadR - 10;
                         else basePosX = canvas.width / 2;
 
                         const textX = basePosX + (canvas.width * (state.textOffsetX / 100));
@@ -1018,7 +1101,7 @@
         window.addEventListener('touchend', () => { state.isDraggingWatermark = false; });
         window.addEventListener('touchcancel', () => { state.isDraggingWatermark = false; });
 
-        // --- STREAMING_CHUNK: Fitur Unduh Foto... ---
+        // --- STREAMING_CHUNK: Fitur Unduh Foto Resolusi Tinggi... ---
         document.getElementById('btn-download').addEventListener('click', () => {
             if (!state.image) {
                 showToast("Silakan upload foto atau ambil gambar dari kamera terlebih dahulu.", 'warning');
