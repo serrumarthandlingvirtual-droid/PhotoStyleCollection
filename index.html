@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Style Collection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111;
+            color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        .accent-color {
+            color: #FFD700; /* Kuning aksen */
+        }
+        .bg-accent {
+            background-color: #FFD700;
+        }
+        .border-accent {
+            border-color: #FFD700;
+        }
+
+        /* Typewriter font for stamps */
+        .typewriter-font {
+            font-family: 'Courier Prime', monospace;
+        }
+
+        /* Container for the main editing area to keep it responsive */
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 64px); /* Subtract header height roughly */
+        }
+
+        @media (min-width: 768px) {
+            .editor-container {
+                flex-direction: row;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #222; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #555; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FFD700; 
+        }
+
+        /* The canvas wrapper needs to be absolute relative to its container to handle aspect ratios properly without stretching */
+        #canvas-wrapper {
+            position: relative;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        /* Frame Styles applied via classes */
+        .frame-polaroid-1 { padding: 5% 5% 15% 5%; background-color: white; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        .frame-polaroid-2 { padding: 4% 4% 18% 4%; background-color: #fdfdfd; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .frame-polaroid-3 { padding: 6% 6% 12% 6%; background-color: #f4f4f4; border: 1px solid #ddd; }
+        .frame-polaroid-4 { padding: 3% 3% 20% 3%; background-color: #fffaf0; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
+        .frame-polaroid-5 { padding: 8% 8% 18% 8%; background-color: #fafafa; border-radius: 2px; }
+        .frame-polaroid-6 { padding: 2% 2% 25% 2%; background-color: white; box-shadow: 2px 2px 5px rgba(0,0,0,0.2); }
+
+        /* Hide elements by default */
+        .hidden { display: none !important; }
+        
+        /* Video element for camera */
+        #camera-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Important for no-frame look on preview */
+            background-color: #000;
+        }
+
+        .filter-btn {
+            transition: all 0.2s;
+        }
+        .filter-btn.active {
+            background-color: #FFD700;
+            color: #000;
+            border-color: #FFD700;
+        }
+        
+        /* Specific CSS Filters for preview */
+        /* These will be applied via canvas 2d context for the final save, but CSS is used for fast preview if possible, though for complex stuff we'll do it all on canvas */
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <!-- Header -->
+    <header class="bg-black border-b border-gray-800 p-4 flex justify-between items-center z-10 shrink-0">
+        <div class="flex items-center gap-3">
+            <!-- Default Logo provided by user -->
+            <img id="app-logo" src="LOGO SERRUM ART HANDLING PNG a.png" alt="Logo" class="h-8 w-auto object-contain bg-white rounded p-1" onerror="this.src='https://placehold.co/100x40/ffffff/000000?text=LOGO'">
+            <h1 class="text-xl font-bold uppercase tracking-wider hidden sm:block">Photo <span class="accent-color">Style</span> Collection</h1>
+            
+            <label class="cursor-pointer ml-4 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 py-1 px-2 rounded border border-gray-600 transition">
+                Ganti Logo
+                <input type="file" id="logo-upload" accept="image/*" class="hidden">
+            </label>
+        </div>
+        <div class="flex gap-2">
+            <button id="btn-camera-mode" class="bg-gray-800 hover:bg-gray-700 text-white py-2 px-4 rounded border border-gray-600 transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+                <span class="hidden sm:inline">Kamera</span>
+            </button>
+            <label id="btn-upload-mode" class="bg-gray-800 hover:bg-gray-700 text-white py-2 px-4 rounded border border-gray-600 transition cursor-pointer flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
+                <span class="hidden sm:inline">Upload Foto</span>
+                <input type="file" id="image-upload" accept="image/*" class="hidden">
+            </label>
+            <button id="btn-download" class="bg-accent hover:bg-yellow-500 text-black font-bold py-2 px-4 rounded transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2zm2.354 6.854-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 1 1 .708-.708L7.5 9.293V5.5a.5.5 0 0 1 1 0v3.793l1.146-1.147a.5.5 0 0 1 .708.708z"/></svg>
+                <span class="hidden sm:inline">Simpan (HD)</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Editor Area -->
+    <main class="editor-container grow bg-zinc-950">
+        
+        <!-- Camera View Area (Hidden by default) -->
+        <section id="camera-section" class="w-full h-full flex flex-col hidden relative bg-black">
+            <div class="relative grow overflow-hidden flex items-center justify-center">
+                <video id="camera-preview" autoplay playsinline></video>
+                <!-- Camera Controls Overlay -->
+                <div class="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-6 z-20 px-4">
+                    <!-- Zoom Controls -->
+                    <div class="flex bg-black/50 rounded-full backdrop-blur p-1">
+                        <button class="zoom-btn px-3 py-1 text-sm text-white hover:text-yellow-400" data-zoom="1">1x</button>
+                        <button class="zoom-btn px-3 py-1 text-sm text-white hover:text-yellow-400" data-zoom="2">2x</button>
+                        <button class="zoom-btn px-3 py-1 text-sm text-white hover:text-yellow-400" data-zoom="3">3x</button>
+                    </div>
+                    <!-- Capture Button -->
+                    <button id="btn-capture" class="w-16 h-16 rounded-full border-4 border-white bg-transparent hover:bg-white/20 transition"></button>
+                    <!-- Close Camera -->
+                    <button id="btn-close-camera" class="w-10 h-10 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+                    </button>
+                </div>
+                <!-- Exposure Slider Overlay (Simulated via filter on video element if native not supported) -->
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-20 bg-black/50 p-2 rounded-full backdrop-blur">
+                    <span class="text-xs text-white">Brt</span>
+                    <input type="range" id="cam-exposure" min="-1" max="1" step="0.1" value="0" class="h-24 w-1 bg-gray-600 rounded-lg appearance-none cursor-pointer" style="writing-mode: bt-lr; -webkit-appearance: slider-vertical;">
+                </div>
+            </div>
+        </section>
+
+        <!-- Preview Area -->
+        <section id="preview-section" class="w-full md:w-2/3 h-full flex flex-col justify-center items-center p-4 bg-zinc-900 overflow-hidden relative">
+            <div id="no-image-text" class="text-gray-500 text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p>Mulai dengan memilih "Kamera" atau "Upload Foto"</p>
+            </div>
+
+            <!-- The actual container we will render to canvas -->
+            <div id="export-container" class="hidden relative max-w-full max-h-full flex items-center justify-center">
+                <div id="canvas-wrapper" class="bg-white">
+                    <!-- The main image canvas where filters are applied -->
+                    <canvas id="main-canvas" class="block w-full h-auto" style="max-height: 70vh; object-fit: contain;"></canvas>
+                    
+                    <!-- Text Overlay container (positioned over the frame padding) -->
+                    <div id="text-overlay" class="absolute bottom-4 left-4 right-4 flex justify-between items-end pointer-events-none opacity-0 transition-opacity duration-300 z-10">
+                        <div class="flex flex-col gap-1 typewriter-font font-bold text-sm md:text-base leading-tight" id="overlay-text-content" style="color: #000;">
+                            <span id="display-date"></span>
+                            <span id="display-location"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hidden original image for processing -->
+            <img id="original-image" class="hidden" alt="original">
+        </section>
+
+        <!-- Controls Sidebar -->
+        <aside id="controls-section" class="w-full md:w-1/3 h-1/3 md:h-full bg-black border-t md:border-t-0 md:border-l border-gray-800 flex flex-col shrink-0">
+            
+            <!-- Tabs -->
+            <div class="flex border-b border-gray-800 shrink-0 overflow-x-auto custom-scrollbar">
+                <button class="tab-btn px-4 py-3 text-sm font-semibold text-gray-400 hover:text-white border-b-2 border-transparent active-tab whitespace-nowrap" data-target="tab-filters">Filters</button>
+                <button class="tab-btn px-4 py-3 text-sm font-semibold text-gray-400 hover:text-white border-b-2 border-transparent whitespace-nowrap" data-target="tab-frame">Frame</button>
+                <button class="tab-btn px-4 py-3 text-sm font-semibold text-gray-400 hover:text-white border-b-2 border-transparent whitespace-nowrap" data-target="tab-text">Teks & Info</button>
+                <button class="tab-btn px-4 py-3 text-sm font-semibold text-gray-400 hover:text-white border-b-2 border-transparent whitespace-nowrap" data-target="tab-adjust">Adjust</button>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="grow overflow-y-auto p-4 custom-scrollbar">
+                
+                <!-- Filters Tab -->
+                <div id="tab-filters" class="tab-content block">
+                    <select id="filter-category-select" class="w-full bg-gray-900 border border-gray-700 text-white rounded p-2 mb-4 focus:outline-none focus:border-yellow-500">
+                        <option value="retro">10 Retro</option>
+                        <option value="vintage">10 Vintage</option>
+                        <option value="cinematic">10 Cinematic</option>
+                        <option value="filmstyle">10 Gaya Film</option>
+                        <option value="pro">10 Pro (Balanced DR)</option>
+                        <!-- Kamera Ternama -->
+                        <option value="cam-leica">Kamera: Leica Style (10)</option>
+                        <option value="cam-fuji">Kamera: Fujifilm Style (10)</option>
+                        <option value="cam-kodak">Kamera: Kodak Style (10)</option>
+                        <option value="cam-canon">Kamera: Canon Colors (10)</option>
+                        <option value="cam-sony">Kamera: Sony Look (10)</option>
+                    </select>
+
+                    <div id="filter-grid" class="grid grid-cols-3 gap-2">
+                        <!-- Filters injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Frame Tab -->
+                <div id="tab-frame" class="tab-content hidden space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-gray-300">Jenis Frame Polaroid</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button class="frame-btn filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs active" data-frame="none">Tanpa Frame</button>
+                            <button class="frame-btn filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs" data-frame="frame-polaroid-1">Classic</button>
+                            <button class="frame-btn filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs" data-frame="frame-polaroid-2">Modern Soft</button>
+                            <button class="frame-btn filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs" data-frame="frame-polaroid-3">Thin Border</button>
+                            <button class="frame-btn filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs" data-frame="frame-polaroid-4">Vintage Deep</button>
+                            <button class="frame-btn filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs" data-frame="frame-polaroid-5">Minimalist</button>
+                            <button class="frame-btn filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs" data-frame="frame-polaroid-6">Wide Bottom</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-gray-300">Ketebalan Frame (Padding %)</label>
+                        <input type="range" id="frame-thickness" min="0" max="20" value="0" class="w-full accent-yellow-500">
+                        <span id="thickness-val" class="text-xs text-gray-400">Default (Berdasarkan Jenis)</span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-gray-300">Warna Frame</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="frame-color" value="#ffffff" class="h-8 w-8 rounded border-0 bg-transparent cursor-pointer">
+                            <button id="reset-frame-color" class="text-xs text-gray-400 hover:text-white underline">Reset ke Putih</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Text Tab -->
+                <div id="tab-text" class="tab-content hidden space-y-4">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-medium text-gray-300">Tampilkan Info</label>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" id="toggle-text" class="sr-only peer">
+                          <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-yellow-500"></div>
+                        </label>
+                    </div>
+                    
+                    <div id="text-controls" class="space-y-4 opacity-50 pointer-events-none transition-opacity">
+                        <div>
+                            <label class="block text-xs mb-1 text-gray-400">Format Tanggal/Tahun</label>
+                            <input type="text" id="input-date" placeholder="Contoh: '98 MAY 24" class="w-full bg-gray-900 border border-gray-700 text-white rounded p-2 text-sm focus:border-yellow-500 outline-none typewriter-font">
+                        </div>
+                        <div>
+                            <label class="block text-xs mb-1 text-gray-400">Lokasi / Keterangan</label>
+                            <input type="text" id="input-location" placeholder="JAKARTA, IND" class="w-full bg-gray-900 border border-gray-700 text-white rounded p-2 text-sm focus:border-yellow-500 outline-none typewriter-font">
+                        </div>
+                        <div>
+                            <label class="block text-xs mb-1 text-gray-400">Warna Teks</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="text-color" value="#000000" class="h-8 w-8 rounded border-0 bg-transparent cursor-pointer">
+                                <button id="reset-text-color" class="text-xs text-gray-400 hover:text-white underline">Reset Tinta Hitam</button>
+                                <button id="set-text-orange" class="text-xs text-orange-500 hover:text-orange-400 underline">Tinta Oranye Khas</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Adjust Tab -->
+                <div id="tab-adjust" class="tab-content hidden space-y-4">
+                    <p class="text-xs text-gray-400 mb-2">Penyesuaian manual (menimpa pengaturan filter jika diubah)</p>
+                    
+                    <div class="space-y-3">
+                        <div class="flex flex-col">
+                            <div class="flex justify-between text-xs mb-1"><span>Brightness</span><span id="val-brightness">100%</span></div>
+                            <input type="range" id="adj-brightness" min="0" max="200" value="100" class="w-full accent-yellow-500" data-filter="brightness">
+                        </div>
+                        <div class="flex flex-col">
+                            <div class="flex justify-between text-xs mb-1"><span>Contrast</span><span id="val-contrast">100%</span></div>
+                            <input type="range" id="adj-contrast" min="0" max="200" value="100" class="w-full accent-yellow-500" data-filter="contrast">
+                        </div>
+                        <div class="flex flex-col">
+                            <div class="flex justify-between text-xs mb-1"><span>Saturation</span><span id="val-saturate">100%</span></div>
+                            <input type="range" id="adj-saturate" min="0" max="200" value="100" class="w-full accent-yellow-500" data-filter="saturate">
+                        </div>
+                        <div class="flex flex-col">
+                            <div class="flex justify-between text-xs mb-1"><span>Sepia</span><span id="val-sepia">0%</span></div>
+                            <input type="range" id="adj-sepia" min="0" max="100" value="0" class="w-full accent-yellow-500" data-filter="sepia">
+                        </div>
+                        <div class="flex flex-col">
+                            <div class="flex justify-between text-xs mb-1"><span>Hue Rotate</span><span id="val-hue-rotate">0deg</span></div>
+                            <input type="range" id="adj-hue-rotate" min="-180" max="180" value="0" class="w-full accent-yellow-500" data-filter="hue-rotate" data-suffix="deg">
+                        </div>
+                        <div class="flex flex-col">
+                            <div class="flex justify-between text-xs mb-1"><span>Blur (Softness)</span><span id="val-blur">0px</span></div>
+                            <input type="range" id="adj-blur" min="0" max="10" step="0.1" value="0" class="w-full accent-yellow-500" data-filter="blur" data-suffix="px">
+                        </div>
+                        <button id="btn-reset-adjust" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2 rounded text-sm mt-4 border border-gray-700">Reset Adjustments</button>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+    </main>
+
+    <!-- Modal Message Box -->
+    <div id="message-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center hidden backdrop-blur-sm">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-lg max-w-sm w-full mx-4 shadow-2xl">
+            <h3 id="modal-title" class="text-lg font-bold text-white mb-2">Informasi</h3>
+            <p id="modal-message" class="text-gray-300 mb-6 text-sm"></p>
+            <div class="flex justify-end">
+                <button id="modal-close" class="bg-accent text-black px-4 py-2 rounded font-semibold hover:bg-yellow-500 transition">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Data & Definitions ---
+        
+        // Define 100 filters total (10 categories * 10 filters)
+        // We use standard CSS filters combined to create looks, plus color overlays applied via canvas later
+        const filterDefinitions = {
+            retro: [
+                { name: "Retro 1", css: "sepia(50%) contrast(120%) saturate(80%) hue-rotate(-10deg)" },
+                { name: "Retro 2", css: "sepia(30%) contrast(150%) saturate(60%) hue-rotate(15deg) brightness(90%)" },
+                { name: "Faded 80s", css: "saturate(40%) contrast(90%) brightness(110%) sepia(20%)" },
+                { name: "Neon Glow", css: "contrast(130%) saturate(150%) hue-rotate(-30deg) brightness(105%)" },
+                { name: "Warm Past", css: "sepia(40%) saturate(110%) contrast(110%) hue-rotate(-5deg)" },
+                { name: "Cool Retro", css: "saturate(70%) contrast(120%) hue-rotate(180deg) brightness(90%)" },
+                { name: "Grungy", css: "contrast(160%) saturate(50%) sepia(30%) brightness(85%)" },
+                { name: "Sepia Dream", css: "sepia(80%) contrast(110%) blur(0.5px)" },
+                { name: "Polaroid Old", css: "contrast(120%) saturate(70%) sepia(30%) hue-rotate(-10deg) brightness(110%)" },
+                { name: "Vaporwave", css: "saturate(200%) hue-rotate(270deg) contrast(110%)" }
+            ],
+            vintage: [
+                { name: "Vintage 1", css: "sepia(70%) contrast(110%) saturate(90%)" },
+                { name: "Old Paper", css: "sepia(90%) contrast(90%) brightness(110%)" },
+                { name: "Classic B&W", css: "grayscale(100%) contrast(130%)" },
+                { name: "Soft B&W", css: "grayscale(100%) contrast(90%) brightness(120%)" },
+                { name: "Tintype", css: "grayscale(100%) sepia(30%) contrast(150%) brightness(80%)" },
+                { name: "Faded Color", css: "saturate(30%) contrast(80%) brightness(120%)" },
+                { name: "Warm Vintage", css: "sepia(50%) saturate(80%) hue-rotate(-20deg) brightness(110%)" },
+                { name: "Cold Vintage", css: "sepia(20%) saturate(60%) hue-rotate(190deg) contrast(110%)" },
+                { name: "Antique", css: "sepia(100%) contrast(120%) saturate(50%) brightness(95%)" },
+                { name: "Dusty", css: "contrast(80%) saturate(50%) sepia(40%) brightness(110%)" }
+            ],
+            cinematic: [
+                { name: "Teal & Orange", css: "saturate(130%) contrast(110%) hue-rotate(-15deg)" }, // Simple approx
+                { name: "Moody Dark", css: "contrast(140%) brightness(75%) saturate(80%)" },
+                { name: "Cinematic Bright", css: "contrast(120%) brightness(115%) saturate(110%)" },
+                { name: "Action Movie", css: "contrast(150%) saturate(120%) hue-rotate(-10deg)" },
+                { name: "Sci-Fi Blue", css: "saturate(90%) contrast(130%) hue-rotate(200deg) brightness(90%)" },
+                { name: "Desaturated", css: "saturate(40%) contrast(130%)" },
+                { name: "Golden Hour", css: "sepia(30%) saturate(140%) contrast(110%) hue-rotate(-10deg)" },
+                { name: "Matrix Green", css: "hue-rotate(90deg) saturate(120%) contrast(140%) brightness(85%)" },
+                { name: "Horror", css: "contrast(160%) saturate(30%) brightness(70%) sepia(20%)" },
+                { name: "Epic", css: "contrast(125%) saturate(115%) brightness(105%)" }
+            ],
+            filmstyle: [
+                { name: "Kodachrome", css: "contrast(130%) saturate(120%) hue-rotate(-5deg)" },
+                { name: "Portra 400", css: "contrast(110%) saturate(110%) brightness(105%) sepia(10%)" },
+                { name: "Ilford HP5", css: "grayscale(100%) contrast(140%) brightness(95%)" },
+                { name: "Velvia", css: "saturate(150%) contrast(120%)" },
+                { name: "Agfa Vista", css: "saturate(130%) contrast(115%) hue-rotate(5deg)" },
+                { name: "Lomo", css: "contrast(150%) saturate(140%) brightness(90%)" },
+                { name: "Cross Process", css: "contrast(140%) saturate(120%) hue-rotate(45deg)" },
+                { name: "CineStill", css: "contrast(120%) saturate(110%) hue-rotate(-15deg) brightness(105%)" },
+                { name: "Ektar 100", css: "saturate(140%) contrast(125%)" },
+                { name: "Tri-X 400", css: "grayscale(100%) contrast(160%) brightness(90%)" }
+            ],
+            pro: [
+                { name: "Balanced", css: "contrast(105%) saturate(105%) brightness(102%)" },
+                { name: "HDR Look", css: "contrast(90%) saturate(110%) brightness(110%)" },
+                { name: "Crisp", css: "contrast(120%) saturate(105%) brightness(105%)" },
+                { name: "Soft Portrait", css: "contrast(95%) saturate(95%) brightness(105%) blur(0.2px)" },
+                { name: "Punchy", css: "contrast(130%) saturate(120%)" },
+                { name: "Neutral", css: "contrast(100%) saturate(100%) brightness(100%)" },
+                { name: "Cool Pro", css: "contrast(110%) saturate(105%) hue-rotate(185deg)" },
+                { name: "Warm Pro", css: "contrast(110%) saturate(105%) sepia(15%)" },
+                { name: "High Key", css: "brightness(130%) contrast(90%) saturate(90%)" },
+                { name: "Low Key", css: "brightness(60%) contrast(130%) saturate(110%)" }
+            ],
+            'cam-leica': [
+                { name: "M Monochrom", css: "grayscale(100%) contrast(145%) brightness(95%)" },
+                { name: "Leica Look", css: "contrast(125%) saturate(110%) sepia(5%)" },
+                { name: "Summilux", css: "contrast(115%) saturate(115%) brightness(105%)" },
+                { name: "Classic M", css: "contrast(120%) saturate(95%) sepia(10%)" },
+                { name: "Vivid L", css: "contrast(130%) saturate(135%)" },
+                { name: "Soft L", css: "contrast(95%) saturate(90%) brightness(110%)" },
+                { name: "Street B&W", css: "grayscale(100%) contrast(160%) brightness(85%)" },
+                { name: "Warm L", css: "contrast(110%) saturate(110%) hue-rotate(-10deg)" },
+                { name: "Cold L", css: "contrast(115%) saturate(105%) hue-rotate(190deg)" },
+                { name: "Noctilux", css: "contrast(110%) saturate(105%) brightness(115%) blur(0.3px)" }
+            ],
+            'cam-fuji': [
+                { name: "Classic Chrome", css: "contrast(120%) saturate(70%) sepia(15%)" },
+                { name: "Astia", css: "contrast(95%) saturate(115%) brightness(105%)" },
+                { name: "Provia", css: "contrast(110%) saturate(110%)" },
+                { name: "Velvia F", css: "contrast(130%) saturate(140%)" },
+                { name: "Acros", css: "grayscale(100%) contrast(130%) brightness(95%)" },
+                { name: "Pro Neg Hi", css: "contrast(125%) saturate(100%)" },
+                { name: "Pro Neg Std", css: "contrast(105%) saturate(90%)" },
+                { name: "Eterna", css: "contrast(85%) saturate(80%) brightness(110%)" },
+                { name: "Classic Neg", css: "contrast(130%) saturate(85%) hue-rotate(10deg)" },
+                { name: "Monochrome F", css: "grayscale(100%) contrast(110%)" }
+            ],
+            'cam-kodak': [
+                { name: "Gold 200", css: "contrast(110%) saturate(125%) sepia(15%) hue-rotate(-5deg)" },
+                { name: "ColorPlus", css: "contrast(105%) saturate(115%) sepia(20%)" },
+                { name: "Ultramax", css: "contrast(120%) saturate(130%) hue-rotate(5deg)" },
+                { name: "Ektachrome", css: "contrast(125%) saturate(120%) hue-rotate(10deg)" },
+                { name: "T-Max", css: "grayscale(100%) contrast(150%) brightness(105%)" },
+                { name: "Tri-X", css: "grayscale(100%) contrast(160%) brightness(90%)" },
+                { name: "Portra 160", css: "contrast(100%) saturate(105%) sepia(5%)" },
+                { name: "Portra 800", css: "contrast(115%) saturate(115%) sepia(10%) brightness(105%)" },
+                { name: "ProImage", css: "contrast(110%) saturate(110%) hue-rotate(-2deg)" },
+                { name: "Aerochrome", css: "hue-rotate(250deg) saturate(150%) contrast(120%)" } // False color approximation
+            ],
+            'cam-canon': [
+                { name: "Standard C", css: "contrast(110%) saturate(115%)" },
+                { name: "Portrait C", css: "contrast(95%) saturate(105%) brightness(105%)" },
+                { name: "Landscape C", css: "contrast(120%) saturate(130%) hue-rotate(5deg)" },
+                { name: "Fine Detail", css: "contrast(115%) saturate(110%)" },
+                { name: "Neutral C", css: "contrast(90%) saturate(90%)" },
+                { name: "Faithful", css: "contrast(100%) saturate(100%)" },
+                { name: "Monochrome C", css: "grayscale(100%) contrast(120%)" },
+                { name: "Vivid C", css: "contrast(125%) saturate(140%)" },
+                { name: "Warm C", css: "contrast(110%) saturate(115%) sepia(15%)" },
+                { name: "Cool C", css: "contrast(110%) saturate(115%) hue-rotate(190deg)" }
+            ],
+            'cam-sony': [
+                { name: "Standard S", css: "contrast(115%) saturate(110%) brightness(98%)" },
+                { name: "Vivid S", css: "contrast(130%) saturate(135%)" },
+                { name: "Neutral S", css: "contrast(95%) saturate(95%)" },
+                { name: "Clear", css: "contrast(120%) saturate(105%) brightness(105%)" },
+                { name: "Deep", css: "contrast(125%) saturate(120%) brightness(90%)" },
+                { name: "Light", css: "contrast(90%) saturate(100%) brightness(115%)" },
+                { name: "Portrait S", css: "contrast(100%) saturate(105%) brightness(105%)" },
+                { name: "Landscape S", css: "contrast(125%) saturate(130%)" },
+                { name: "Sunset", css: "contrast(120%) saturate(125%) sepia(20%) hue-rotate(-10deg)" },
+                { name: "B&W S", css: "grayscale(100%) contrast(125%)" }
+            ]
+        };
+
+        // --- State ---
+        let currentImage = null; // HTMLImageElement
+        let currentFilter = "none";
+        let currentCssFilterString = "";
+        let currentFrame = "none";
+        let stream = null;
+        let isCameraMode = false;
+        let currentZoom = 1;
+        let originalImageCanvas = document.createElement('canvas'); // To hold unscaled original
+
+        // --- DOM Elements ---
+        const elements = {
+            imageUpload: document.getElementById('image-upload'),
+            logoUpload: document.getElementById('logoUpload'),
+            appLogo: document.getElementById('app-logo'),
+            exportContainer: document.getElementById('export-container'),
+            canvasWrapper: document.getElementById('canvas-wrapper'),
+            mainCanvas: document.getElementById('main-canvas'),
+            originalImage: document.getElementById('original-image'),
+            noImageText: document.getElementById('no-image-text'),
+            
+            cameraSection: document.getElementById('camera-section'),
+            previewSection: document.getElementById('preview-section'),
+            cameraPreview: document.getElementById('camera-preview'),
+            btnCameraMode: document.getElementById('btn-camera-mode'),
+            btnCloseCamera: document.getElementById('btn-close-camera'),
+            btnCapture: document.getElementById('btn-capture'),
+            camExposure: document.getElementById('cam-exposure'),
+            zoomBtns: document.querySelectorAll('.zoom-btn'),
+            
+            btnDownload: document.getElementById('btn-download'),
+            
+            filterCategorySelect: document.getElementById('filter-category-select'),
+            filterGrid: document.getElementById('filter-grid'),
+            
+            frameBtns: document.querySelectorAll('.frame-btn'),
+            frameThickness: document.getElementById('frame-thickness'),
+            thicknessVal: document.getElementById('thickness-val'),
+            frameColor: document.getElementById('frame-color'),
+            resetFrameColor: document.getElementById('reset-frame-color'),
+            
+            toggleText: document.getElementById('toggle-text'),
+            textControls: document.getElementById('text-controls'),
+            textOverlay: document.getElementById('text-overlay'),
+            inputDate: document.getElementById('input-date'),
+            inputLocation: document.getElementById('input-location'),
+            displayDate: document.getElementById('display-date'),
+            displayLocation: document.getElementById('display-location'),
+            textColor: document.getElementById('text-color'),
+            resetTextColor: document.getElementById('reset-text-color'),
+            setTextOrange: document.getElementById('set-text-orange'),
+            overlayTextContent: document.getElementById('overlay-text-content'),
+            
+            adjustInputs: document.querySelectorAll('#tab-adjust input[type="range"]'),
+            btnResetAdjust: document.getElementById('btn-reset-adjust'),
+            
+            tabs: document.querySelectorAll('.tab-btn'),
+            tabContents: document.querySelectorAll('.tab-content')
+        };
+
+        const ctx = elements.mainCanvas.getContext('2d', { willReadFrequently: true });
+
+        // --- Helper: Message Modal ---
+        function showMessage(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('message-modal').classList.remove('hidden');
+        }
+        document.getElementById('modal-close').addEventListener('click', () => {
+            document.getElementById('message-modal').classList.add('hidden');
+        });
+
+        // --- Tab Switching ---
+        elements.tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                elements.tabs.forEach(t => {
+                    t.classList.remove('text-white', 'border-yellow-500');
+                    t.classList.add('text-gray-400', 'border-transparent');
+                });
+                tab.classList.remove('text-gray-400', 'border-transparent');
+                tab.classList.add('text-white', 'border-yellow-500');
+
+                elements.tabContents.forEach(content => content.classList.add('hidden'));
+                document.getElementById(tab.dataset.target).classList.remove('hidden');
+            });
+        });
+        // Set initial active tab visually
+        elements.tabs[0].click();
+
+        // --- Logo Upload ---
+        document.getElementById('logo-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    elements.appLogo.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // --- Filter Generation ---
+        function renderFilters(category) {
+            elements.filterGrid.innerHTML = '';
+            
+            // Add 'Normal' button first
+            const normalBtn = document.createElement('button');
+            normalBtn.className = `filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs w-full ${currentFilter === 'none' ? 'active' : ''}`;
+            normalBtn.textContent = 'Normal';
+            normalBtn.onclick = () => applyPresetFilter('none', '');
+            elements.filterGrid.appendChild(normalBtn);
+
+            const filters = filterDefinitions[category];
+            filters.forEach((filter, index) => {
+                const btn = document.createElement('button');
+                btn.className = `filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs w-full truncate px-1 ${currentFilter === filter.name ? 'active' : ''}`;
+                btn.textContent = filter.name;
+                // Add a small preview style using CSS filter
+                btn.style.filter = filter.css; // Preview on text just for subtle effect or we can apply to a bg image. Let's just keep text.
+                
+                btn.onclick = () => applyPresetFilter(filter.name, filter.css);
+                elements.filterGrid.appendChild(btn);
+            });
+        }
+
+        elements.filterCategorySelect.addEventListener('change', (e) => {
+            renderFilters(e.target.value);
+        });
+        
+        // Initial render
+        renderFilters(elements.filterCategorySelect.value);
+
+        // --- Core Image Handling ---
+        
+        function loadImage(src) {
+            const img = new Image();
+            img.onload = () => {
+                currentImage = img;
+                
+                // Store high-res original on an offscreen canvas
+                originalImageCanvas.width = img.width;
+                originalImageCanvas.height = img.height;
+                const oCtx = originalImageCanvas.getContext('2d');
+                oCtx.drawImage(img, 0, 0);
+
+                elements.originalImage.src = src;
+                
+                elements.noImageText.classList.add('hidden');
+                elements.exportContainer.classList.remove('hidden');
+                elements.btnDownload.disabled = false;
+                
+                // Set main canvas size relative for display, but actual resolution matches image
+                // To prevent massive lag, we might scale down extremely large images for preview, 
+                // but for this implementation we will rely on CSS to scale the canvas visually, 
+                // while keeping canvas internal resolution high.
+                elements.mainCanvas.width = img.width;
+                elements.mainCanvas.height = img.height;
+                
+                updateCanvas();
+                resetAdjustments(); // Reset sliders on new image
+                
+                // If coming from camera, hide camera view
+                if(isCameraMode) stopCamera();
+            };
+            img.src = src;
+        }
+
+        elements.imageUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    loadImage(event.target.result);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // --- Apply Adjustments / Filters ---
+        
+        function applyPresetFilter(name, cssString) {
+            currentFilter = name;
+            currentCssFilterString = cssString;
+            
+            // Update active state on buttons
+            document.querySelectorAll('#filter-grid .filter-btn').forEach(btn => {
+                if (btn.textContent === name || (name==='none' && btn.textContent==='Normal')) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Parse CSS string to update adjustment sliders for visual feedback
+            // This is complex, so we'll just reset sliders to represent the 'base' of the filter
+            // Or, simpler: applying a preset resets manual adjustments to neutral relative to the filter.
+            resetAdjustmentsUIOnly();
+            
+            updateCanvas();
+        }
+
+        function getManualFilterString() {
+            let filters = [];
+            elements.adjustInputs.forEach(input => {
+                const filter = input.dataset.filter;
+                const val = input.value;
+                const suffix = input.dataset.suffix || '%';
+                // Only add if not default
+                if (filter === 'blur' && val === '0') return;
+                if ((filter === 'brightness' || filter === 'contrast' || filter === 'saturate') && val === '100') return;
+                if ((filter === 'sepia' || filter === 'hue-rotate') && val === '0') return;
+                
+                filters.push(`${filter}(${val}${suffix})`);
+            });
+            return filters.join(' ');
+        }
+
+        elements.adjustInputs.forEach(input => {
+            input.addEventListener('input', (e) => {
+                // Update label
+                const suffix = input.dataset.suffix || '%';
+                document.getElementById(`val-${input.dataset.filter}`).textContent = `${input.value}${suffix}`;
+                
+                // Clear preset selection as we are manual adjusting now
+                currentFilter = "Custom";
+                currentCssFilterString = "";
+                document.querySelectorAll('#filter-grid .filter-btn').forEach(btn => btn.classList.remove('active'));
+                
+                updateCanvas();
+            });
+        });
+
+        function resetAdjustments() {
+            resetAdjustmentsUIOnly();
+            currentFilter = "none";
+            currentCssFilterString = "";
+            document.querySelectorAll('#filter-grid .filter-btn').forEach(btn => {
+                if(btn.textContent==='Normal') btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+            updateCanvas();
+        }
+
+        function resetAdjustmentsUIOnly() {
+            elements.adjustInputs.forEach(input => {
+                input.value = input.defaultValue;
+                const suffix = input.dataset.suffix || '%';
+                document.getElementById(`val-${input.dataset.filter}`).textContent = `${input.value}${suffix}`;
+            });
+        }
+        
+        elements.btnResetAdjust.addEventListener('click', resetAdjustments);
+
+        // --- Main Render Function ---
+        function updateCanvas() {
+            if (!currentImage) return;
+
+            // Determine final filter string
+            let finalFilter = currentCssFilterString;
+            if (currentFilter === "Custom") {
+                finalFilter = getManualFilterString();
+            }
+
+            // Apply filter to canvas context
+            ctx.filter = finalFilter || 'none';
+            
+            // Clear and draw original
+            ctx.clearRect(0, 0, elements.mainCanvas.width, elements.mainCanvas.height);
+            ctx.drawImage(originalImageCanvas, 0, 0);
+            
+            // Reset filter so it doesn't affect future drawings unintentionally
+            ctx.filter = 'none';
+        }
+
+        // --- Frame Logic ---
+        
+        function updateFrameClass() {
+            // Remove old frame classes
+            elements.canvasWrapper.className = 'bg-white transition-all duration-300 relative inline-block';
+            if (currentFrame !== 'none') {
+                elements.canvasWrapper.classList.add(currentFrame);
+            }
+            
+            // Apply custom thickness if set
+            const thickness = elements.frameThickness.value;
+            if (thickness > 0) {
+                // Determine layout aspect roughly based on image to decide padding direction, 
+                // but simpler is uniform or standard polaroid (bottom heavy)
+                if (currentFrame !== 'none') {
+                    // Override bottom padding for polaroid effect
+                    const topSides = thickness;
+                    const bottom = thickness * 3; // Make bottom 3x thicker
+                    elements.canvasWrapper.style.padding = `${topSides}% ${topSides}% ${bottom}% ${topSides}%`;
+                    elements.thicknessVal.textContent = `Custom (${thickness}%)`;
+                } else {
+                     elements.canvasWrapper.style.padding = '0';
+                }
+            } else {
+                elements.canvasWrapper.style.padding = ''; // Reset to class defaults
+                elements.thicknessVal.textContent = 'Default (Berdasarkan Jenis)';
+            }
+
+            // Apply custom color
+            elements.canvasWrapper.style.backgroundColor = elements.frameColor.value;
+        }
+
+        elements.frameBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                elements.frameBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFrame = btn.dataset.frame;
+                updateFrameClass();
+            });
+        });
+
+        elements.frameThickness.addEventListener('input', updateFrameClass);
+        
+        elements.frameColor.addEventListener('input', updateFrameClass);
+        elements.resetFrameColor.addEventListener('click', () => {
+            elements.frameColor.value = '#ffffff';
+            updateFrameClass();
+        });
+
+        // --- Text Overlay Logic ---
+        
+        function updateTextDisplay() {
+            const show = elements.toggleText.checked;
+            elements.textControls.classList.toggle('opacity-50', !show);
+            elements.textControls.classList.toggle('pointer-events-none', !show);
+            
+            if (show) {
+                elements.textOverlay.classList.remove('opacity-0');
+                
+                let dateStr = elements.inputDate.value;
+                if(!dateStr) {
+                    const today = new Date();
+                    // Example format: '26 OCT 24
+                    const year = today.getFullYear().toString().slice(-2);
+                    const month = today.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+                    dateStr = `'${year} ${month} ${today.getDate()}`;
+                    elements.inputDate.value = dateStr;
+                }
+                elements.displayDate.textContent = dateStr;
+                
+                let locStr = elements.inputLocation.value;
+                elements.displayLocation.textContent = locStr;
+
+                elements.overlayTextContent.style.color = elements.textColor.value;
+
+            } else {
+                elements.textOverlay.classList.add('opacity-0');
+            }
+        }
+
+        elements.toggleText.addEventListener('change', updateTextDisplay);
+        elements.inputDate.addEventListener('input', updateTextDisplay);
+        elements.inputLocation.addEventListener('input', updateTextDisplay);
+        
+        elements.textColor.addEventListener('input', updateTextDisplay);
+        elements.resetTextColor.addEventListener('click', () => {
+            elements.textColor.value = '#000000';
+            updateTextDisplay();
+        });
+        elements.setTextOrange.addEventListener('click', () => {
+            elements.textColor.value = '#ff6600';
+            updateTextDisplay();
+        });
+
+        // Initialize text toggle state
+        updateTextDisplay();
+
+        // --- Camera Handling ---
+        
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment', // Prefer back camera
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    } 
+                });
+                elements.cameraPreview.srcObject = stream;
+                elements.cameraSection.classList.remove('hidden');
+                elements.previewSection.classList.add('hidden');
+                isCameraMode = true;
+                
+                // Attempt to get hardware controls if available
+                const track = stream.getVideoTracks()[0];
+                const capabilities = track.getCapabilities();
+                
+                // Setup Zoom
+                elements.zoomBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        elements.zoomBtns.forEach(b => b.classList.remove('text-yellow-400'));
+                        btn.classList.add('text-yellow-400');
+                        currentZoom = parseFloat(btn.dataset.zoom);
+                        
+                        // Apply hardware zoom if supported, else we'll simulate on capture
+                        if (capabilities.zoom) {
+                            // Map 1x, 2x, 3x to min/max range roughly
+                            const min = capabilities.zoom.min;
+                            const max = capabilities.zoom.max;
+                            // Very simple mapping, actual hardware mapping is more complex
+                            let val = min + ((currentZoom - 1) / 2) * (max - min); 
+                            track.applyConstraints({advanced: [{zoom: Math.min(val, max)}]}).catch(e=>console.log("Zoom not supported by hardware"));
+                        } else {
+                            // Simulate digital zoom by scaling the video element
+                            elements.cameraPreview.style.transform = `scale(${currentZoom})`;
+                        }
+                    });
+                });
+                // Reset zoom UI
+                elements.zoomBtns[0].click();
+
+            } catch (err) {
+                console.error("Error accessing camera:", err);
+                showMessage("Gagal", "Tidak dapat mengakses kamera. Pastikan Anda telah memberikan izin.");
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            elements.cameraSection.classList.add('hidden');
+            elements.previewSection.classList.remove('hidden');
+            isCameraMode = false;
+            elements.cameraPreview.style.transform = 'scale(1)'; // Reset simulate zoom
+        }
+
+        elements.btnCameraMode.addEventListener('click', startCamera);
+        elements.btnCloseCamera.addEventListener('click', stopCamera);
+
+        // Capture logic
+        elements.btnCapture.addEventListener('click', () => {
+            const video = elements.cameraPreview;
+            const canvas = document.createElement('canvas');
+            
+            // Handle digital zoom cropping if hardware zoom wasn't applied
+            // If hardware zoom worked, we just capture full frame.
+            // For simplicity, we capture the video dimensions.
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            
+            // Apply exposure simulation from slider before capture
+            const expVal = parseFloat(elements.camExposure.value);
+            if(expVal !== 0) {
+                 // Convert -1 to 1 range to brightness percentage roughly
+                 const brightness = 100 + (expVal * 50); 
+                 ctx.filter = `brightness(${brightness}%)`;
+            }
+
+            // Draw image. If simulated zoom is used, we need to crop center
+            if (currentZoom > 1 && video.style.transform.includes('scale')) {
+                const sWidth = video.videoWidth / currentZoom;
+                const sHeight = video.videoHeight / currentZoom;
+                const sx = (video.videoWidth - sWidth) / 2;
+                const sy = (video.videoHeight - sHeight) / 2;
+                ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            }
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            loadImage(dataUrl);
+            stopCamera();
+        });
+
+        // Exposure slider simulation on video preview
+        elements.camExposure.addEventListener('input', (e) => {
+             const expVal = parseFloat(e.target.value);
+             const brightness = 100 + (expVal * 50); 
+             elements.cameraPreview.style.filter = `brightness(${brightness}%)`;
+        });
+
+
+        // --- Download Logic ---
+        
+        elements.btnDownload.addEventListener('click', async () => {
+            if (!currentImage) return;
+
+            // Prepare UI for capture: temporarily hide controls that shouldn't be in the shot if any existed
+            const originalTransform = elements.canvasWrapper.style.transform;
+            elements.canvasWrapper.style.transform = 'none'; // Ensure no CSS scaling affects the output
+            
+            // We use html2canvas to capture the canvas wrapper, which includes the canvas (with filters baked in) 
+            // and the text overlay, AND the CSS padding/background forming the frame.
+            // By passing scale: 1, it captures the element at its actual DOM size, which might be scaled down.
+            // To get High Res, we need to temporarily make the wrapper take the full size of the internal canvas,
+            // capture it, then restore it.
+
+            elements.btnDownload.innerHTML = '<span class="animate-spin inline-block mr-2">⟳</span> Memproses...';
+            elements.btnDownload.disabled = true;
+
+            try {
+                // 1. Save current display styles
+                const parent = elements.canvasWrapper.parentElement;
+                const origParentStyles = {
+                    display: parent.style.display,
+                    position: parent.style.position,
+                    width: parent.style.width,
+                    height: parent.style.height
+                };
+
+                // 2. Force wrapper to full image resolution for capture
+                // This is a bit tricky because the frame padding is percentage based.
+                // If we force the width to original image width, padding scales correctly.
+                
+                // Create a temporary container off-screen to do the high-res render to avoid jarring UI jumps
+                const tempContainer = document.createElement('div');
+                tempContainer.style.position = 'absolute';
+                tempContainer.style.left = '-9999px';
+                tempContainer.style.top = '0';
+                document.body.appendChild(tempContainer);
+                
+                // Clone the wrapper
+                const clone = elements.canvasWrapper.cloneNode(true);
+                
+                // Get the actual drawn canvas from the original and copy it to the clone
+                const clonedCanvas = clone.querySelector('canvas');
+                clonedCanvas.getContext('2d').drawImage(elements.mainCanvas, 0, 0);
+                
+                // Force dimensions on clone based on original image
+                // Calculate total width including padding if it's a frame
+                let targetWidth = originalImageCanvas.width;
+                if(currentFrame !== 'none') {
+                    // Approximate padding to add to width to maintain frame ratio
+                    // If padding is 5%, then image is 90% of total width.
+                    // Total width = image width / 0.9
+                    const style = window.getComputedStyle(elements.canvasWrapper);
+                    const pl = parseFloat(style.paddingLeft);
+                    const wrapperWidth = elements.canvasWrapper.offsetWidth;
+                    const paddingPct = pl / wrapperWidth;
+                    
+                    if(paddingPct > 0) {
+                        targetWidth = originalImageCanvas.width / (1 - (paddingPct*2));
+                    }
+                }
+
+                clone.style.width = `${targetWidth}px`;
+                clone.style.height = 'auto';
+                
+                // Ensure text scales up nicely. The font size needs to be adjusted based on the scale factor
+                const scaleFactor = targetWidth / elements.canvasWrapper.offsetWidth;
+                const clonedTextContainer = clone.querySelector('#overlay-text-content');
+                if(clonedTextContainer) {
+                    const currentFontSize = window.getComputedStyle(elements.overlayTextContent).fontSize;
+                    clonedTextContainer.style.fontSize = `${parseFloat(currentFontSize) * scaleFactor}px`;
+                    
+                    // Adjust bottom/left positions if necessary, they are percentage based mostly via Tailwind but check
+                    const textOverlay = clone.querySelector('#text-overlay');
+                    textOverlay.style.bottom = `${parseFloat(window.getComputedStyle(elements.textOverlay).bottom) * scaleFactor}px`;
+                    textOverlay.style.left = `${parseFloat(window.getComputedStyle(elements.textOverlay).left) * scaleFactor}px`;
+                    textOverlay.style.right = `${parseFloat(window.getComputedStyle(elements.textOverlay).right) * scaleFactor}px`;
+                }
+
+                tempContainer.appendChild(clone);
+
+                // Wait a tick for styles to apply
+                await new Promise(r => setTimeout(r, 100));
+
+                const canvas = await html2canvas(clone, {
+                    useCORS: true,
+                    scale: 1, // We've already scaled the element up
+                    backgroundColor: currentFrame !== 'none' ? 'transparent' : '#000000', // Transparent back so frame color shows
+                    logging: false
+                });
+
+                // Clean up temp
+                document.body.removeChild(tempContainer);
+
+                // Download
+                const link = document.createElement('a');
+                link.download = `PhotoStyle_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png', 1.0);
+                link.click();
+
+            } catch (err) {
+                console.error("Export error:", err);
+                showMessage("Gagal", "Terjadi kesalahan saat memproses gambar.");
+            } finally {
+                // Restore button
+                elements.btnDownload.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2zm2.354 6.854-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 1 1 .708-.708L7.5 9.293V5.5a.5.5 0 0 1 1 0v3.793l1.146-1.147a.5.5 0 0 1 .708.708z"/></svg><span class="hidden sm:inline">Simpan (HD)</span>`;
+                elements.btnDownload.disabled = false;
+                elements.canvasWrapper.style.transform = originalTransform;
+            }
+        });
+
+    </script>
+</body>
+</html>
