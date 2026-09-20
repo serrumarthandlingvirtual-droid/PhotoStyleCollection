@@ -2,1305 +2,925 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Photo Style Collection</title>
+    <!-- Tailwind CSS for styling (Black, White, Yellow Theme) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'psc-black': '#121212',
-                        'psc-white': '#f5f5f5',
-                        'psc-yellow': '#FFD700',
-                        'psc-gray': '#2a2a2a'
+                        psc: {
+                            black: '#0a0a0a',
+                            dark: '#171717',
+                            light: '#f5f5f5',
+                            yellow: '#fbbf24',
+                            yellowHover: '#f59e0b'
+                        }
                     },
                     fontFamily: {
-                        'typewriter': ['"Courier Prime"', 'monospace'],
-                        'sans': ['Inter', 'sans-serif']
+                        mono: ['"Courier New"', 'Courier', 'monospace']
                     }
                 }
             }
         }
     </script>
     <style>
-        body {
-            background-color: #121212;
-            color: #f5f5f5;
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-            touch-action: manipulation;
-        }
+        body { background-color: #0a0a0a; color: #f5f5f5; overflow-x: hidden; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #171717; }
+        ::-webkit-scrollbar-thumb { background: #525252; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #fbbf24; }
 
-        /* Hide scrollbar for clean UI but keep functionality */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
         }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #fbbf24;
+            cursor: pointer;
+            margin-top: -6px;
         }
-
-        #editor-container {
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #525252;
+            border-radius: 2px;
+        }
+        
+        /* Preview Area */
+        #preview-container {
             position: relative;
             width: 100%;
+            height: calc(100vh - 140px);
             display: flex;
             justify-content: center;
             align-items: center;
-            background-image: 
-                linear-gradient(45deg, #1a1a1a 25%, transparent 25%), 
-                linear-gradient(-45deg, #1a1a1a 25%, transparent 25%), 
-                linear-gradient(45deg, transparent 75%, #1a1a1a 75%), 
-                linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
-            background-size: 20px 20px;
-            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-            min-height: 50vh;
-            overflow: hidden; /* Ensure watermark doesn't overflow visually */
-        }
-
-        /* The actual canvas used for rendering and downloading */
-        #main-canvas {
-            max-width: 100%;
-            max-height: 60vh;
-            object-fit: contain;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            transition: all 0.3s ease;
-        }
-
-        /* Container for draggable watermark */
-        #watermark-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; /* Let clicks pass through to canvas usually */
-        }
-
-        .watermark-element {
-            position: absolute;
-            pointer-events: auto; /* Make draggable */
-            cursor: move;
-            touch-action: none;
-            user-select: none;
-            max-width: 150px; /* Default max width */
-            border: 1px dashed transparent;
+            background: #000;
+            overflow: hidden;
         }
         
-        .watermark-element:hover {
-            border-color: #FFD700;
+        #main-canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transition: transform 0.2s;
         }
 
         .filter-btn {
-            transition: all 0.2s;
-            border: 2px solid transparent;
+            transition: all 0.2s ease;
         }
         .filter-btn.active {
-            border-color: #FFD700;
-            color: #FFD700;
-            background-color: #2a2a2a;
+            border-color: #fbbf24;
+            color: #fbbf24;
+            background-color: rgba(251, 191, 36, 0.1);
         }
-        
-        .range-slider {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 4px;
-            background: #4a4a4a;
-            border-radius: 2px;
-            outline: none;
+
+        /* Watermark overlay interaction */
+        #watermark-interaction {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            cursor: grab;
+            z-index: 10;
         }
-        
-        .range-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #FFD700;
-            cursor: pointer;
-        }
-        
-        /* Camera UI overlays */
-        #camera-ui {
-            display: none;
-        }
-        video {
-            object-fit: cover;
-            width: 100%;
-            height: 100%;
-        }
+        #watermark-interaction:active { cursor: grabbing; }
+
+        /* Camera Video Element (Hidden normally) */
+        #camera-video { display: none; }
     </style>
 </head>
-<body class="flex flex-col h-screen">
+<body class="h-screen flex flex-col font-sans">
 
-    <header class="bg-psc-black p-4 flex justify-between items-center border-b border-psc-gray z-10 shrink-0">
-        <h1 class="text-xl font-bold tracking-wider flex items-center gap-2">
-            <span class="text-psc-white">PHOTO STYLE</span>
-            <span class="text-psc-yellow">COLLECTION</span>
-        </h1>
+    <header class="bg-psc-dark border-b border-gray-800 p-4 flex justify-between items-center shadow-md z-20">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded bg-psc-yellow text-psc-black flex items-center justify-center font-bold text-xl">P</div>
+            <h1 class="text-xl font-bold tracking-wider text-psc-light">PHOTO <span class="text-psc-yellow">STYLE</span> COLLECTION</h1>
+        </div>
         <div class="flex gap-3">
-            <button id="btn-camera" class="bg-psc-gray hover:bg-gray-700 text-white p-2 rounded-full transition" title="Buka Kamera">
-                <i class="fas fa-camera"></i>
+            <button id="btn-upload-trigger" class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-semibold transition border border-gray-600">
+                Upload Foto
             </button>
-            <label class="bg-psc-gray hover:bg-gray-700 text-white p-2 rounded-full cursor-pointer transition" title="Unggah Foto">
-                <i class="fas fa-upload"></i>
-                <input type="file" id="upload-image" accept="image/*" class="hidden">
-            </label>
-            <button id="btn-download" class="bg-psc-yellow hover:bg-yellow-500 text-black px-4 py-2 rounded font-bold transition flex items-center gap-2">
-                <i class="fas fa-download"></i> Simpan
+            <input type="file" id="upload-input" accept="image/*" class="hidden">
+            <button id="btn-download" class="bg-psc-yellow hover:bg-psc-yellowHover text-psc-black px-6 py-2 rounded text-sm font-bold transition shadow-[0_0_10px_rgba(251,191,36,0.3)]">
+                Download HD
             </button>
         </div>
     </header>
 
-    <main class="flex-grow flex flex-col relative overflow-hidden bg-psc-black">
-        
-        <!-- Editor View -->
-        <div id="editor-view" class="flex-grow flex flex-col w-full h-full">
-            <!-- Canvas Container -->
-            <div id="editor-container" class="flex-grow p-4 relative">
-                <div class="text-center text-gray-500 flex flex-col items-center justify-center absolute inset-0 z-0" id="placeholder-text">
-                    <i class="fas fa-image text-4xl mb-2"></i>
-                    <p>Unggah foto atau gunakan kamera untuk memulai</p>
+    <main class="flex-1 flex overflow-hidden">
+        <!-- Main Preview Area -->
+        <section class="flex-1 relative bg-black flex flex-col">
+            <div id="preview-container">
+                <span id="no-image-text" class="text-gray-600 absolute z-0 select-none pointer-events-none">Belum ada foto. Upload atau gunakan kamera.</span>
+                <canvas id="main-canvas"></canvas>
+                <div id="watermark-interaction" style="display:none;"></div>
+            </div>
+            
+            <!-- Quick Camera Tools (Overlaid on bottom of preview) -->
+            <div id="camera-controls" class="hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-psc-dark/80 backdrop-blur border border-gray-700 p-3 rounded-xl flex items-center gap-4 z-20">
+                <div class="flex flex-col text-xs text-gray-400">
+                    <label>Exposure</label>
+                    <input type="range" id="cam-exposure" min="-2" max="2" step="0.1" value="0" class="w-24">
                 </div>
-                <!-- The Canvas where everything is drawn -->
-                <canvas id="main-canvas" class="z-10 relative"></canvas>
-                
-                <!-- Overlay for UI dragging (Watermark & Text) -->
-                <div id="watermark-overlay" class="z-20">
-                    <img id="draggable-watermark" src="LOGO SERRUM ART HANDLING PNG a.png" class="watermark-element hidden" alt="Watermark" draggable="false">
-                    <div id="draggable-text" class="watermark-element hidden font-typewriter text-xl" style="color: black;" draggable="false"></div>
+                <div class="flex gap-1 bg-gray-800 p-1 rounded">
+                    <button class="cam-zoom-btn px-3 py-1 rounded bg-psc-yellow text-black text-xs font-bold" data-zoom="1">1x</button>
+                    <button class="cam-zoom-btn px-3 py-1 rounded hover:bg-gray-700 text-xs font-bold" data-zoom="2">2x</button>
+                    <button class="cam-zoom-btn px-3 py-1 rounded hover:bg-gray-700 text-xs font-bold" data-zoom="3">3x</button>
                 </div>
+                <button id="btn-capture" class="w-12 h-12 rounded-full border-4 border-gray-400 bg-white hover:bg-gray-200 transition"></button>
+                <button id="btn-stop-cam" class="text-red-400 hover:text-red-300 text-xs">Tutup</button>
+            </div>
+            <video id="camera-video" autoplay playsinline></video>
+        </section>
+
+        <!-- Controls Sidebar -->
+        <aside class="w-96 bg-psc-dark border-l border-gray-800 flex flex-col z-10 overflow-hidden shadow-2xl">
+            <!-- Tabs -->
+            <div class="flex flex-wrap border-b border-gray-800 bg-black p-1 text-xs font-semibold">
+                <button class="tab-btn flex-1 py-3 text-psc-yellow border-b-2 border-psc-yellow" data-target="tab-camera">Kamera</button>
+                <button class="tab-btn flex-1 py-3 text-gray-400 hover:text-white" data-target="tab-filters">Filter</button>
+                <button class="tab-btn flex-1 py-3 text-gray-400 hover:text-white" data-target="tab-frame">Frame</button>
+                <button class="tab-btn flex-1 py-3 text-gray-400 hover:text-white" data-target="tab-text">Teks</button>
+                <button class="tab-btn flex-1 py-3 text-gray-400 hover:text-white" data-target="tab-watermark">Logo</button>
             </div>
 
-            <div class="bg-psc-black border-t border-psc-gray p-4 shrink-0 h-64 flex flex-col">
-                <!-- Tool Categories Tabs -->
-                <div class="flex overflow-x-auto no-scrollbar gap-2 mb-4 pb-2 border-b border-gray-800">
-                    <button class="tab-btn px-4 py-2 rounded-full bg-psc-yellow text-black font-semibold text-sm whitespace-nowrap" data-target="panel-filters">Filters</button>
-                    <button class="tab-btn px-4 py-2 rounded-full bg-psc-gray text-white text-sm whitespace-nowrap hover:text-psc-yellow transition" data-target="panel-frame">Polaroid Frame</button>
-                    <button class="tab-btn px-4 py-2 rounded-full bg-psc-gray text-white text-sm whitespace-nowrap hover:text-psc-yellow transition" data-target="panel-text">Teks Mesin Ketik</button>
-                    <button class="tab-btn px-4 py-2 rounded-full bg-psc-gray text-white text-sm whitespace-nowrap hover:text-psc-yellow transition" data-target="panel-watermark">Watermark</button>
-                    <button class="tab-btn px-4 py-2 rounded-full bg-psc-gray text-white text-sm whitespace-nowrap hover:text-psc-yellow transition" data-target="panel-adjust">Sesuaikan</button>
+            <!-- Tab Contents -->
+            <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                
+                <!-- CAMERA TAB -->
+                <div id="tab-camera" class="tab-content block space-y-4">
+                    <h2 class="text-lg font-bold text-white mb-2 border-b border-gray-700 pb-2">Pengaturan Kamera</h2>
+                    <p class="text-xs text-gray-400 mb-4">Aktifkan kamera untuk mengambil gambar langsung dengan dukungan lensa optical (jika hardware mendukung) dan exposure control.</p>
+                    <button id="btn-start-cam" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white py-3 rounded-lg flex items-center justify-center gap-2 transition">
+                        <svg class="w-5 h-5 text-psc-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        Buka Kamera Utama
+                    </button>
+                    <div id="cam-status" class="text-xs text-psc-yellow hidden">Kamera aktif. Gunakan kontrol di area preview.</div>
                 </div>
 
-                <div id="panel-filters" class="tool-panel flex-grow flex flex-col overflow-hidden">
-                    <div class="flex overflow-x-auto no-scrollbar gap-2 mb-2 pb-1">
-                        <button class="filter-category-btn text-xs px-3 py-1 rounded bg-gray-800 text-psc-yellow border border-psc-yellow" data-category="pro">Auto Pro</button>
-                        <button class="filter-category-btn text-xs px-3 py-1 rounded bg-gray-800 text-gray-400" data-category="retro">Retro</button>
-                        <button class="filter-category-btn text-xs px-3 py-1 rounded bg-gray-800 text-gray-400" data-category="vintage">Vintage</button>
-                        <button class="filter-category-btn text-xs px-3 py-1 rounded bg-gray-800 text-gray-400" data-category="cinematic">Cinematic</button>
-                        <button class="filter-category-btn text-xs px-3 py-1 rounded bg-gray-800 text-gray-400" data-category="film">Film Style</button>
-                        <button class="filter-category-btn text-xs px-3 py-1 rounded bg-gray-800 text-gray-400" data-category="cam-leica">Leica Style</button>
-                        <button class="filter-category-btn text-xs px-3 py-1 rounded bg-gray-800 text-gray-400" data-category="cam-fuji">Fuji Style</button>
-                        <button class="filter-category-btn text-xs px-3 py-1 rounded bg-gray-800 text-gray-400" data-category="cam-sony">Sony Style</button>
+                <!-- FILTERS TAB -->
+                <div id="tab-filters" class="tab-content hidden">
+                    <div class="mb-4">
+                        <select id="filter-category" class="w-full bg-black border border-gray-700 text-white p-2 rounded focus:border-psc-yellow focus:outline-none">
+                            <option value="pro">Pro Auto Enhance (10)</option>
+                            <option value="cinematic">Cinematic Style (10)</option>
+                            <option value="film">Film Style (10)</option>
+                            <option value="retro">Retro Vibes (10)</option>
+                            <option value="vintage">Vintage Classic (10)</option>
+                            <option value="leica">Kamera: Leica (10)</option>
+                            <option value="fuji">Kamera: Fujifilm (10)</option>
+                            <option value="kodak">Kamera: Kodak (10)</option>
+                            <option value="canon">Kamera: Canon (10)</option>
+                            <option value="sony">Kamera: Sony (10)</option>
+                        </select>
                     </div>
-                    <div id="filter-container" class="flex overflow-x-auto no-scrollbar gap-3 pt-2 pb-2 h-full items-start">
-                        <!-- Filters will be injected here via JS -->
+                    <!-- Filter Grid -->
+                    <div id="filter-grid" class="grid grid-cols-2 gap-2">
+                        <!-- Filters populated by JS -->
+                    </div>
+                    <button id="btn-reset-filter" class="w-full mt-4 bg-red-900/30 text-red-400 border border-red-900 hover:bg-red-900/50 py-2 rounded text-sm transition">Hapus Filter</button>
+                </div>
+
+                <!-- FRAME TAB -->
+                <div id="tab-frame" class="tab-content hidden space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Jenis Frame Polaroid (6)</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button class="frame-btn active border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow" data-type="none">Tanpa Frame</button>
+                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow" data-type="classic">Classic</button>
+                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow" data-type="square">Square 1:1</button>
+                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow" data-type="wide">Wide</button>
+                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow" data-type="tall">Tall Mini</button>
+                            <button class="frame-btn border border-gray-700 bg-gray-800 p-2 rounded text-xs hover:border-psc-yellow" data-type="borderless">Modern Edge</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Ketebalan Frame</label>
+                        <input type="range" id="frame-thickness" min="0.5" max="3" step="0.1" value="1">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Warna Frame</label>
+                        <div class="flex items-center gap-3">
+                            <input type="color" id="frame-color" value="#ffffff" class="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0">
+                            <span class="text-xs text-gray-400">Pilih warna base frame polaroid</span>
+                        </div>
                     </div>
                 </div>
 
-                <div id="panel-frame" class="tool-panel hidden flex-grow overflow-y-auto pr-2">
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
-                        <button class="frame-btn filter-btn bg-gray-800 p-2 rounded flex flex-col items-center" data-frame="none">
-                            <div class="w-12 h-16 border-2 border-gray-600 bg-gray-900 mb-1"></div>
-                            <span class="text-xs">Tanpa Frame</span>
-                        </button>
-                        <button class="frame-btn filter-btn bg-gray-800 p-2 rounded flex flex-col items-center" data-frame="classic">
-                            <div class="w-12 h-16 bg-white p-1 pb-3 mb-1 shadow-sm">
-                                <div class="w-full h-full bg-gray-800"></div>
-                            </div>
-                            <span class="text-xs">Klasik Putih</span>
-                        </button>
-                        <button class="frame-btn filter-btn bg-gray-800 p-2 rounded flex flex-col items-center" data-frame="vintage">
-                            <div class="w-12 h-16 bg-[#f4ebd0] p-1 pb-3 mb-1 shadow-sm">
-                                <div class="w-full h-full bg-gray-800"></div>
-                            </div>
-                            <span class="text-xs">Vintage Kertas</span>
-                        </button>
-                        <button class="frame-btn filter-btn bg-gray-800 p-2 rounded flex flex-col items-center" data-frame="black">
-                            <div class="w-12 h-16 bg-black p-1 pb-3 mb-1 shadow-sm border border-gray-700">
-                                <div class="w-full h-full bg-gray-800"></div>
-                            </div>
-                            <span class="text-xs">Modern Hitam</span>
-                        </button>
-                        <button class="frame-btn filter-btn bg-gray-800 p-2 rounded flex flex-col items-center" data-frame="wide">
-                            <div class="w-16 h-12 bg-white p-1 pr-4 mb-1 shadow-sm">
-                                <div class="w-full h-full bg-gray-800"></div>
-                            </div>
-                            <span class="text-xs">Lanskap Lebar</span>
-                        </button>
-                        <button class="frame-btn filter-btn bg-gray-800 p-2 rounded flex flex-col items-center" data-frame="square">
-                            <div class="w-12 h-12 bg-white p-1 pb-2 mb-1 shadow-sm">
-                                <div class="w-full h-full bg-gray-800"></div>
-                            </div>
-                            <span class="text-xs">Insta Square</span>
-                        </button>
+                <!-- TEXT TAB -->
+                <div id="tab-text" class="tab-content hidden space-y-4">
+                    <p class="text-xs text-gray-400 mb-2">Tambahkan watermark teks ala mesin ketik pada bagian bawah foto (hanya terlihat jika menggunakan frame).</p>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1">Tanggal</label>
+                        <input type="text" id="text-date" placeholder="Mis: 12 OKT" class="w-full bg-black border border-gray-700 text-white p-2 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1">Tahun</label>
+                        <input type="text" id="text-year" placeholder="Mis: 1998" class="w-full bg-black border border-gray-700 text-white p-2 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1">Lokasi / Keterangan</label>
+                        <input type="text" id="text-location" placeholder="Mis: JAKARTA, ID" class="w-full bg-black border border-gray-700 text-white p-2 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-2">Warna Teks</label>
+                        <input type="color" id="text-color" value="#222222" class="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0">
+                    </div>
+                </div>
+
+                <!-- WATERMARK TAB -->
+                <div id="tab-watermark" class="tab-content hidden space-y-4">
+                    <div class="bg-gray-800 p-3 rounded border border-gray-700">
+                        <label class="block text-sm font-semibold text-white mb-2">Upload Logo Anda</label>
+                        <input type="file" id="watermark-input" accept="image/png, image/jpeg" class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-psc-yellow file:text-black hover:file:bg-psc-yellowHover cursor-pointer">
+                        <p class="text-[10px] text-gray-500 mt-2">Gunakan format PNG transparan untuk hasil terbaik.</p>
                     </div>
                     
-                    <div class="space-y-4">
-                        <div>
-                            <label class="text-xs text-gray-400 block mb-1">Ketebalan Frame</label>
-                            <input type="range" id="frame-thickness" min="0.02" max="0.15" step="0.01" value="0.05" class="range-slider">
-                        </div>
-                        <div>
-                            <label class="text-xs text-gray-400 block mb-1">Warna Frame</label>
-                            <input type="color" id="frame-color" value="#ffffff" class="w-full h-8 rounded cursor-pointer bg-transparent border-0 p-0">
-                        </div>
+                    <div>
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2 cursor-pointer">
+                            <input type="checkbox" id="watermark-toggle" checked class="accent-psc-yellow w-4 h-4"> Tampilkan Watermark
+                        </label>
                     </div>
-                </div>
 
-                <div id="panel-text" class="tool-panel hidden flex-grow overflow-y-auto pr-2">
-                    <div class="space-y-4">
-                        <div class="flex items-center gap-2 mb-2">
-                            <input type="checkbox" id="toggle-text" class="w-4 h-4 text-psc-yellow bg-gray-800 border-gray-600 rounded focus:ring-psc-yellow">
-                            <label for="toggle-text" class="text-sm">Tampilkan Teks Info</label>
-                        </div>
-                        
-                        <div id="text-controls" class="opacity-50 pointer-events-none transition-opacity">
-                            <div class="grid grid-cols-2 gap-2 mb-3">
-                                <div>
-                                    <label class="text-xs text-gray-400 block mb-1">Lokasi</label>
-                                    <input type="text" id="text-location" value="JAKARTA" class="w-full bg-gray-800 border border-gray-700 rounded p-1 text-sm font-typewriter uppercase">
-                                </div>
-                                <div>
-                                    <label class="text-xs text-gray-400 block mb-1">Tanggal/Tahun</label>
-                                    <input type="text" id="text-date" value="20 SEP '26" class="w-full bg-gray-800 border border-gray-700 rounded p-1 text-sm font-typewriter uppercase">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-xs text-gray-400 block mb-1">Ukuran Font</label>
-                                    <input type="range" id="text-size" min="10" max="60" value="24" class="range-slider">
-                                </div>
-                                <div>
-                                    <label class="text-xs text-gray-400 block mb-1">Warna Font</label>
-                                    <input type="color" id="text-color" value="#000000" class="w-full h-8 rounded cursor-pointer bg-transparent border-0 p-0">
-                                </div>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-2 italic"><i class="fas fa-hand-pointer mr-1"></i> Sentuh dan seret teks pada foto untuk memindahkannya.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="panel-watermark" class="tool-panel hidden flex-grow overflow-y-auto pr-2">
-                    <div class="space-y-4">
-                        <div class="flex items-center gap-2 mb-2">
-                            <input type="checkbox" id="toggle-watermark" checked class="w-4 h-4 text-psc-yellow bg-gray-800 border-gray-600 rounded focus:ring-psc-yellow">
-                            <label for="toggle-watermark" class="text-sm">Tampilkan Watermark</label>
-                        </div>
-
-                        <div id="watermark-controls" class="space-y-4">
-                            <div>
-                                <label class="bg-gray-800 hover:bg-gray-700 text-white text-sm py-2 px-4 rounded cursor-pointer transition inline-block border border-gray-600">
-                                    <i class="fas fa-upload mr-2"></i>Ganti Logo Watermark
-                                    <input type="file" id="upload-watermark" accept="image/png, image/jpeg, image/svg+xml" class="hidden">
-                                </label>
-                            </div>
-                            
-                            <div>
-                                <label class="text-xs text-gray-400 block mb-1">Ukuran (Skala)</label>
-                                <input type="range" id="watermark-size" min="0.05" max="0.5" step="0.01" value="0.15" class="range-slider">
-                            </div>
-                            
-                            <div>
-                                <label class="text-xs text-gray-400 block mb-1">Transparansi (Opacity)</label>
-                                <input type="range" id="watermark-opacity" min="0.1" max="1" step="0.05" value="0.8" class="range-slider">
-                            </div>
-                            <p class="text-xs text-gray-500 mt-1 italic"><i class="fas fa-hand-pointer mr-1"></i> Sentuh dan seret logo pada foto untuk memindahkannya.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="panel-adjust" class="tool-panel hidden flex-grow overflow-y-auto pr-2">
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="text-gray-400">Exposure (Kecerahan)</span>
-                                <span id="val-exposure" class="text-psc-yellow">0</span>
-                            </div>
-                            <input type="range" id="adj-exposure" min="-100" max="100" value="0" class="range-slider" data-val-id="val-exposure">
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="text-gray-400">Kontras</span>
-                                <span id="val-contrast" class="text-psc-yellow">0</span>
-                            </div>
-                            <input type="range" id="adj-contrast" min="-100" max="100" value="0" class="range-slider" data-val-id="val-contrast">
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="text-gray-400">Saturasi</span>
-                                <span id="val-saturation" class="text-psc-yellow">0</span>
-                            </div>
-                            <input type="range" id="adj-saturation" min="-100" max="100" value="0" class="range-slider" data-val-id="val-saturation">
-                        </div>
-                        <button id="btn-reset-adjust" class="w-full py-1 text-sm bg-gray-800 hover:bg-gray-700 text-white rounded border border-gray-600 transition mt-2">Reset Penyesuaian</button>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <div id="camera-ui" class="absolute inset-0 z-50 bg-black flex-col">
-            <div class="relative flex-grow w-full h-full flex items-center justify-center overflow-hidden bg-black">
-                <!-- Video feed (no crop, object-fit: contain to see full sensor if preferred, but usually cover is expected for full screen. User asked for no crop, so we use contain for the actual video element, but we'll capture the raw intrinsic size) -->
-                <video id="camera-feed" autoplay playsinline style="object-fit: contain;"></video>
-                
-                <!-- Camera Controls Overlay -->
-                <div class="absolute inset-0 flex flex-col justify-between p-4 pointer-events-none">
-                    <!-- Top Bar -->
-                    <div class="flex justify-between items-start pointer-events-auto">
-                        <button id="btn-close-camera" class="bg-black/50 text-white p-3 rounded-full backdrop-blur-sm">
-                            <i class="fas fa-times text-xl"></i>
-                        </button>
-                        <div class="flex gap-2">
-                            <button id="btn-switch-camera" class="bg-black/50 text-white p-3 rounded-full backdrop-blur-sm">
-                                <i class="fas fa-sync-alt text-xl"></i>
-                            </button>
-                        </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-2">Opacity (Transparansi)</label>
+                        <input type="range" id="watermark-opacity" min="0" max="1" step="0.05" value="0.7">
                     </div>
                     
-                    <!-- Middle Area for Exposure Slider (Vertical on right) -->
-                    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-auto h-1/2 flex items-center">
-                        <input type="range" id="camera-exposure" min="-2" max="2" step="0.1" value="0" style="writing-mode: vertical-lr; direction: rtl; appearance: slider-vertical;" class="h-full w-8 cursor-pointer opacity-70">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-2">Ukuran Relatif</label>
+                        <input type="range" id="watermark-size" min="0.05" max="0.5" step="0.01" value="0.15">
                     </div>
 
-                    <!-- Bottom Bar -->
-                    <div class="flex flex-col items-center gap-4 pointer-events-auto mb-4">
-                        <!-- Lens selection -->
-                        <div class="flex bg-black/60 rounded-full p-1 backdrop-blur-sm">
-                            <button class="lens-btn w-10 h-10 rounded-full text-xs font-bold text-white transition active-lens" data-zoom="1">1x</button>
-                            <button class="lens-btn w-10 h-10 rounded-full text-xs font-bold text-gray-400 transition" data-zoom="2">2x</button>
-                            <button class="lens-btn w-10 h-10 rounded-full text-xs font-bold text-gray-400 transition" data-zoom="3">3x</button>
-                        </div>
-                        
-                        <!-- Capture Button -->
-                        <button id="btn-capture" class="w-20 h-20 rounded-full border-4 border-white p-1">
-                            <div class="w-full h-full bg-white rounded-full active:bg-gray-300 transition-colors"></div>
-                        </button>
+                    <div class="p-3 bg-black border border-dashed border-gray-700 rounded text-xs text-center text-gray-400">
+                        💡 <strong>Tips:</strong> Anda bisa langsung klik dan geser (drag) logo watermark pada area preview di sebelah kiri untuk memindahkannya dengan leluasa.
                     </div>
                 </div>
             </div>
-        </div>
-
+        </aside>
     </main>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // State Variables
-            const state = {
-                imageLoaded: false,
-                originalImage: null, // HTMLImageElement
-                currentFilter: 'none',
-                filterIntensity: 100, // For future use
-                frame: {
-                    type: 'none',
-                    thickness: 0.05, // % of image shortest side
-                    color: '#ffffff'
-                },
-                text: {
-                    visible: false,
-                    content: '',
-                    x: 0.5, // relative to image width
-                    y: 0.9, // relative to image height
-                    size: 24, // base size, will scale
-                    color: '#000000'
-                },
-                watermark: {
-                    visible: true,
-                    img: new Image(),
-                    x: 0.8,
-                    y: 0.8,
-                    scale: 0.15,
-                    opacity: 0.8,
-                    loaded: false
-                },
-                adjustments: {
-                    brightness: 100, // 100 is normal (CSS filter based) -> Mapped to Exposure
-                    contrast: 100,
-                    saturate: 100
-                },
-                camera: {
-                    stream: null,
-                    videoTrack: null,
-                    capabilities: null,
-                    facingMode: 'environment', // Start with back camera
-                    zoom: 1,
-                    exposure: 0
-                }
-            };
-
-            // DOM Elements
-            const canvas = document.getElementById('main-canvas');
-            const ctx = canvas.getContext('2d', { willReadFrequently: true }); // optimize for frequent reads during filter application if needed
-            const uploadInput = document.getElementById('upload-image');
-            const downloadBtn = document.getElementById('btn-download');
-            const placeholder = document.getElementById('placeholder-text');
-            const container = document.getElementById('editor-container');
+        // --- CORE STATE ---
+        const state = {
+            image: null, // The loaded Image object
+            originalWidth: 0,
+            originalHeight: 0,
             
-            // Drag elements
-            const overlay = document.getElementById('watermark-overlay');
-            const dragWm = document.getElementById('draggable-watermark');
-            const dragText = document.getElementById('draggable-text');
+            // Camera State
+            stream: null,
+            videoTrack: null,
+            camZoom: 1,
+            camExposure: 0,
 
-            // Defining 10 filters per category as requested
-            const filters = {
-                'pro': [
-                    { id: 'pro-auto', name: 'Auto Enhance', css: 'contrast(110%) saturate(120%) brightness(105%)' },
-                    { id: 'pro-hdr', name: 'HDR Balance', css: 'contrast(115%) saturate(110%) drop-shadow(0 0 5px rgba(255,255,255,0.1))' }, // Simulating HDR slightly
-                    { id: 'pro-portrait', name: 'Soft Portrait', css: 'contrast(95%) saturate(105%) brightness(110%) sepia(5%)' },
-                    { id: 'pro-landscape', name: 'Vivid Nature', css: 'contrast(120%) saturate(140%) brightness(102%)' },
-                    { id: 'pro-night', name: 'Night Sight', css: 'brightness(130%) contrast(110%) saturate(90%)' },
-                    { id: 'pro-food', name: 'Food Pop', css: 'saturate(150%) contrast(110%) hue-rotate(5deg)' },
-                    { id: 'pro-bw', name: 'Pro B&W', css: 'grayscale(100%) contrast(130%) brightness(95%)' },
-                    { id: 'pro-clean', name: 'Clean White', css: 'brightness(115%) contrast(105%) saturate(95%)' },
-                    { id: 'pro-warm', name: 'Golden Hour', css: 'sepia(30%) saturate(120%) contrast(105%) brightness(105%)' },
-                    { id: 'pro-cool', name: 'Blue Hour', css: 'hue-rotate(-15deg) saturate(110%) brightness(105%) contrast(110%)' }
-                ],
-                'retro': [
-                    { id: 'retro-1', name: '80s Arcade', css: 'contrast(140%) saturate(200%) hue-rotate(15deg) brightness(90%)' },
-                    { id: 'retro-2', name: 'Polaroid 600', css: 'sepia(20%) contrast(110%) saturate(80%) brightness(110%)' },
-                    { id: 'retro-3', name: 'Faded Print', css: 'contrast(80%) brightness(120%) sepia(30%) saturate(60%)' },
-                    { id: 'retro-4', name: 'Lomo', css: 'contrast(150%) saturate(130%) sepia(20%)' }, // Vignette handled in render
-                    { id: 'retro-5', name: 'Toy Camera', css: 'saturate(150%) contrast(120%) blur(0.5px)' },
-                    { id: 'retro-6', name: 'VHS', css: 'contrast(90%) saturate(150%) hue-rotate(-20deg) blur(0.5px)' },
-                    { id: 'retro-7', name: 'Disco', css: 'saturate(200%) hue-rotate(45deg) contrast(110%)' },
-                    { id: 'retro-8', name: 'Sepia Tone', css: 'sepia(100%) contrast(110%) brightness(90%)' },
-                    { id: 'retro-9', name: 'Instant Warm', css: 'sepia(40%) saturate(120%) brightness(110%) contrast(105%)' },
-                    { id: 'retro-10', name: 'Washed Out', css: 'contrast(70%) brightness(130%) saturate(40%)' }
-                ],
-                'vintage': [
-                    { id: 'vint-1', name: '1970s', css: 'sepia(50%) contrast(90%) brightness(110%) saturate(80%)' },
-                    { id: 'vint-2', name: 'Old Newspaper', css: 'grayscale(100%) contrast(150%) brightness(110%) sepia(20%)' },
-                    { id: 'vint-3', name: 'Tintype', css: 'sepia(80%) contrast(130%) brightness(80%) grayscale(50%)' },
-                    { id: 'vint-4', name: 'Kodachrome', css: 'saturate(130%) contrast(120%) sepia(10%)' },
-                    { id: 'vint-5', name: 'Daguerreotype', css: 'grayscale(100%) contrast(120%) brightness(120%) sepia(10%) blur(0.5px)' },
-                    { id: 'vint-6', name: 'Victorian', css: 'sepia(60%) contrast(80%) brightness(105%)' },
-                    { id: 'vint-7', name: 'Antique Gold', css: 'sepia(100%) brightness(110%) contrast(110%) hue-rotate(-10deg)' },
-                    { id: 'vint-8', name: 'Faded Film', css: 'contrast(75%) saturate(70%) brightness(115%)' },
-                    { id: 'vint-9', name: 'Classic B&W', css: 'grayscale(100%) contrast(120%)' },
-                    { id: 'vint-10', name: 'Warm Nostalgia', css: 'sepia(30%) saturate(90%) contrast(105%) brightness(105%)' }
-                ],
-                'cinematic': [
-                    { id: 'cine-1', name: 'Teal & Orange', css: 'hue-rotate(-20deg) saturate(120%) contrast(110%)' },
-                    { id: 'cine-2', name: 'Moody Dark', css: 'brightness(80%) contrast(130%) saturate(90%)' },
-                    { id: 'cine-3', name: 'Cyberpunk', css: 'saturate(150%) hue-rotate(30deg) contrast(120%) brightness(90%)' },
-                    { id: 'cine-4', name: 'Matrix Green', css: 'hue-rotate(90deg) saturate(80%) contrast(120%)' },
-                    { id: 'cine-5', name: 'Desaturated Thriller', css: 'saturate(30%) contrast(140%) brightness(90%)' },
-                    { id: 'cine-6', name: 'Golden Glow', css: 'sepia(40%) contrast(110%) brightness(110%)' },
-                    { id: 'cine-7', name: 'Sci-Fi Blue', css: 'hue-rotate(-40deg) saturate(110%) contrast(120%)' },
-                    { id: 'cine-8', name: 'Epic Fantasy', css: 'saturate(130%) contrast(115%) brightness(105%)' },
-                    { id: 'cine-9', name: 'Western Dust', css: 'sepia(50%) contrast(110%) saturate(80%)' },
-                    { id: 'cine-10', name: 'Noir Film', css: 'grayscale(100%) contrast(160%) brightness(85%)' }
-                ],
-                'film': [
-                    { id: 'film-1', name: 'Portra 400', css: 'contrast(95%) saturate(110%) brightness(105%) sepia(10%)' },
-                    { id: 'film-2', name: 'Velvia 50', css: 'saturate(160%) contrast(130%)' },
-                    { id: 'film-3', name: 'Tri-X 400', css: 'grayscale(100%) contrast(140%) brightness(105%)' },
-                    { id: 'film-4', name: 'Ektar 100', css: 'saturate(130%) contrast(115%) hue-rotate(-5deg)' },
-                    { id: 'film-5', name: 'Cinestill 800T', css: 'contrast(120%) saturate(110%) hue-rotate(-10deg) brightness(110%)' }, // Simulating tungsten
-                    { id: 'film-6', name: 'Gold 200', css: 'sepia(20%) saturate(120%) contrast(105%)' },
-                    { id: 'film-7', name: 'Ilford HP5', css: 'grayscale(100%) contrast(115%)' },
-                    { id: 'film-8', name: 'Agfa Vista', css: 'saturate(140%) contrast(110%) hue-rotate(5deg)' },
-                    { id: 'film-9', name: 'Pro 400H', css: 'contrast(90%) saturate(105%) brightness(115%) hue-rotate(5deg)' }, // slightly cool/green
-                    { id: 'film-10', name: 'Superia 400', css: 'saturate(115%) contrast(120%) hue-rotate(-5deg)' } // slightly magenta/red
-                ],
-                'cam-leica': [
-                    { id: 'leica-1', name: 'Monochrom', css: 'grayscale(100%) contrast(135%) brightness(95%)' },
-                    { id: 'leica-2', name: 'Summilux Pop', css: 'contrast(125%) saturate(115%)' },
-                    { id: 'leica-3', name: 'Classic M', css: 'contrast(110%) saturate(105%) sepia(5%)' },
-                    { id: 'leica-4', name: 'Vivid Mode', css: 'saturate(140%) contrast(115%)' },
-                    { id: 'leica-5', name: 'Soft Focus', css: 'contrast(95%) blur(0.5px) brightness(105%)' },
-                    { id: 'leica-6', name: 'High Contrast B&W', css: 'grayscale(100%) contrast(160%) brightness(90%)' },
-                    { id: 'leica-7', name: 'Street Reportage', css: 'contrast(120%) saturate(90%)' },
-                    { id: 'leica-8', name: 'Warm Portrait', css: 'sepia(15%) contrast(105%) brightness(105%)' },
-                    { id: 'leica-9', name: 'Cool Landscape', css: 'hue-rotate(-10deg) saturate(110%) contrast(110%)' },
-                    { id: 'leica-10', name: 'Noctilux Night', css: 'brightness(120%) contrast(115%) saturate(85%)' }
-                ],
-                'cam-fuji': [
-                    { id: 'fuji-1', name: 'Classic Chrome', css: 'contrast(115%) saturate(80%) sepia(10%)' },
-                    { id: 'fuji-2', name: 'Provia', css: 'contrast(110%) saturate(110%)' },
-                    { id: 'fuji-3', name: 'Astia', css: 'contrast(95%) saturate(105%) brightness(105%)' },
-                    { id: 'fuji-4', name: 'Classic Neg', css: 'contrast(120%) saturate(85%) hue-rotate(-5deg)' },
-                    { id: 'fuji-5', name: 'Eterna', css: 'contrast(85%) saturate(90%) brightness(105%)' },
-                    { id: 'fuji-6', name: 'Acros', css: 'grayscale(100%) contrast(125%)' },
-                    { id: 'fuji-7', name: 'Acros+R', css: 'grayscale(100%) contrast(140%) brightness(95%)' }, // simulated red filter
-                    { id: 'fuji-8', name: 'Velvia Vivid', css: 'saturate(150%) contrast(125%)' },
-                    { id: 'fuji-9', name: 'Nostalgic Neg', css: 'sepia(25%) saturate(110%) contrast(110%)' },
-                    { id: 'fuji-10', name: 'Pro Neg Std', css: 'contrast(95%) saturate(95%)' }
-                ],
-                'cam-sony': [
-                    { id: 'sony-1', name: 'Standard Auto', css: 'contrast(105%) saturate(105%)' },
-                    { id: 'sony-2', name: 'Vivid Style', css: 'saturate(130%) contrast(115%)' },
-                    { id: 'sony-3', name: 'Portrait', css: 'contrast(90%) saturate(100%) brightness(105%)' },
-                    { id: 'sony-4', name: 'Landscape', css: 'saturate(125%) contrast(110%) hue-rotate(-5deg)' },
-                    { id: 'sony-5', name: 'Clear', css: 'contrast(120%) saturate(110%) brightness(102%)' },
-                    { id: 'sony-6', name: 'Deep', css: 'brightness(90%) contrast(125%) saturate(115%)' },
-                    { id: 'sony-7', name: 'Light', css: 'brightness(115%) contrast(90%) saturate(95%)' },
-                    { id: 'sony-8', name: 'Autumn Leaves', css: 'sepia(10%) saturate(130%) contrast(110%) hue-rotate(5deg)' },
-                    { id: 'sony-9', name: 'Night Scene', css: 'brightness(115%) contrast(115%) saturate(90%)' },
-                    { id: 'sony-10', name: 'B&W Rich', css: 'grayscale(100%) contrast(130%) brightness(105%)' }
-                ]
+            // Filter State
+            activeFilterCSS: '',
+            
+            // Frame State
+            frameType: 'none', // none, classic, square, wide, tall, borderless
+            frameThickness: 1.0, // multiplier
+            frameColor: '#ffffff',
+            
+            // Text State
+            textDate: '',
+            textYear: '',
+            textLocation: '',
+            textColor: '#222222',
+            
+            // Watermark State
+            showWatermark: true,
+            watermarkImage: null,
+            watermarkOpacity: 0.7,
+            watermarkSize: 0.15, // 15% of image width
+            watermarkPos: { x: 0.8, y: 0.8 }, // Relative coordinates (0 to 1)
+            isDraggingWatermark: false
+        };
+
+        // --- DOM ELEMENTS ---
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const interactionDiv = document.getElementById('watermark-interaction');
+        
+        // --- DEFAULT WATERMARK LOGO GENERATOR (Reference Logo) ---
+        // Generates a default logo purely in JS to avoid external requests
+        function createDefaultLogo() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 300; tempCanvas.height = 300;
+            const tCtx = tempCanvas.getContext('2d');
+            
+            // Draw circle
+            tCtx.beginPath();
+            tCtx.arc(150, 150, 140, 0, Math.PI * 2);
+            tCtx.strokeStyle = '#fbbf24';
+            tCtx.lineWidth = 15;
+            tCtx.stroke();
+            tCtx.fillStyle = 'rgba(0,0,0,0.5)';
+            tCtx.fill();
+            
+            // Draw Text
+            tCtx.fillStyle = '#fbbf24';
+            tCtx.font = 'bold 80px "Courier New", Courier, monospace';
+            tCtx.textAlign = 'center';
+            tCtx.textBaseline = 'middle';
+            tCtx.fillText('PSC', 150, 150);
+            
+            const img = new Image();
+            img.src = tempCanvas.toDataURL('image/png');
+            img.onload = () => {
+                state.watermarkImage = img;
+                render();
             };
+        }
+        createDefaultLogo();
 
-            // Helper to generate CSS filter string based on all settings
-            function getCombinedFilterCSS() {
+        // --- STREAMING_CHUNK: Filter Engine & Database... ---
+        // Generating 100+ distinct filters based on the prompt requirements
+        const filterDatabase = {
+            pro: [], cinematic: [], film: [], retro: [], vintage: [],
+            leica: [], fuji: [], kodak: [], canon: [], sony: []
+        };
+
+        // Helper to generate filters programmatically to save space but ensure variety
+        function generateFilters(category, baseValues, count) {
+            for(let i=1; i<=count; i++) {
+                // Introduce variance based on index to create distinct 10 filters per category
+                const v = i / count; 
                 let css = '';
                 
-                // 1. Manual Adjustments (Exposure, Contrast, Saturation)
-                // Map exposure (-100 to 100) to brightness (0.5 to 1.5)
-                const brightnessVal = 1 + (state.adjustments.brightness - 100) / 200;
-                const contrastVal = state.adjustments.contrast / 100;
-                const saturateVal = state.adjustments.saturate / 100;
-                
-                css += `brightness(${brightnessVal}) contrast(${contrastVal}) saturate(${saturateVal}) `;
-
-                // 2. Selected Filter Preset
-                if (state.currentFilter !== 'none') {
-                    // Find the filter definition
-                    for (const category in filters) {
-                        const filterDef = filters[category].find(f => f.id === state.currentFilter);
-                        if (filterDef) {
-                            css += filterDef.css + ' ';
-                            break;
-                        }
-                    }
+                if (category === 'pro') {
+                    // Pro auto enhance simulates dynamic range and light correction
+                    css = `contrast(${105 + i*2}%) saturate(${105 + i*3}%) brightness(${98 + i}%)`;
+                } else if (category === 'cinematic') {
+                    // Cinematic: teal/orange push, high contrast, slight desat
+                    css = `sepia(${10+i*2}%) hue-rotate(${-10+i}deg) contrast(${110+i*3}%) saturate(${80+i*4}%) brightness(${90+i*2}%)`;
+                } else if (category === 'film') {
+                    // Film: grain simulation (via contrast), shifted colors, faded blacks
+                    css = `contrast(${90+i*3}%) saturate(${70+i*5}%) sepia(${20+i}%) brightness(${100+i}%) hue-rotate(${i*2}deg)`;
+                } else if (category === 'retro') {
+                    // Retro: Heavy sepia, color rotation, blow out highlights
+                    css = `sepia(${50+i*5}%) contrast(${120-i*2}%) saturate(${150-i*5}%) hue-rotate(${-30+i*4}deg)`;
+                } else if (category === 'vintage') {
+                    // Vintage: Grayscale leaning, low contrast, brown tint
+                    css = `grayscale(${30+i*5}%) sepia(${40+i*3}%) contrast(${85+i*2}%) brightness(${110-i}%)`;
+                } 
+                // Camera Simulations
+                else if (category === 'leica') {
+                    // Leica: High micro-contrast, natural but punchy colors, slight vignette (simulated via contrast/brightness)
+                    css = `contrast(${115+i}%) saturate(${110+i*2}%) grayscale(${i}%) sepia(${i*2}%)`;
+                } else if (category === 'fuji') {
+                    // Fuji: Classic Chrome/Provia vibes - green/magenta shifts, pleasing skin tones
+                    css = `saturate(${120-i}%) contrast(${105+i*2}%) hue-rotate(${-5+i}deg) sepia(${5+i}%)`;
+                } else if (category === 'kodak') {
+                    // Kodak: Portra/Gold vibes - warm yellow/red tones, lifted shadows
+                    css = `sepia(${15+i*2}%) saturate(${130-i*2}%) contrast(${95+i}%) brightness(${105-i}%) hue-rotate(${-10+i}deg)`;
+                } else if (category === 'canon') {
+                    // Canon: Warm, saturated reds/oranges
+                    css = `saturate(${115+i*2}%) contrast(${100+i*2}%) sepia(${5+i}%) hue-rotate(${-2-i}deg)`;
+                } else if (category === 'sony') {
+                    // Sony: Clinical, sharp, slightly cool/magenta
+                    css = `contrast(${120+i}%) saturate(${105+i}%) hue-rotate(${5+i}deg) sepia(${i}%) brightness(${95+i}%)`;
                 }
                 
-                return css.trim();
-            }
-
-            
-            // Load Initial Watermark Image
-            state.watermark.img.onload = () => {
-                state.watermark.loaded = true;
-                dragWm.src = state.watermark.img.src;
-                render();
-            };
-            state.watermark.img.src = 'LOGO SERRUM ART HANDLING PNG a.png';
-
-            // UI Tab Switching
-            const tabBtns = document.querySelectorAll('.tab-btn');
-            const toolPanels = document.querySelectorAll('.tool-panel');
-            
-            tabBtns.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    // Reset tab styles
-                    tabBtns.forEach(b => {
-                        b.classList.remove('bg-psc-yellow', 'text-black', 'font-semibold');
-                        b.classList.add('bg-psc-gray', 'text-white');
-                    });
-                    // Set active tab style
-                    e.target.classList.remove('bg-psc-gray', 'text-white');
-                    e.target.classList.add('bg-psc-yellow', 'text-black', 'font-semibold');
-                    
-                    // Show panel
-                    const targetId = e.target.getAttribute('data-target');
-                    toolPanels.forEach(panel => {
-                        if(panel.id === targetId) {
-                            panel.classList.remove('hidden');
-                            panel.classList.add('flex');
-                        } else {
-                            panel.classList.add('hidden');
-                            panel.classList.remove('flex');
-                        }
-                    });
+                filterDatabase[category].push({
+                    name: `${category.charAt(0).toUpperCase() + category.slice(1)} ${i}`,
+                    css: css
                 });
-            });
-
-            // Populate Filters UI
-            const filterContainer = document.getElementById('filter-container');
-            const categoryBtns = document.querySelectorAll('.filter-category-btn');
-
-            function renderFilterCategory(category) {
-                filterContainer.innerHTML = '';
-                
-                // Add "None" option
-                const noneBtn = document.createElement('button');
-                noneBtn.className = `filter-btn min-w-[80px] h-24 bg-gray-800 rounded flex flex-col items-center justify-center gap-1 ${state.currentFilter === 'none' ? 'active' : ''}`;
-                noneBtn.onclick = () => selectFilter('none');
-                noneBtn.innerHTML = `<i class="fas fa-ban text-2xl"></i><span class="text-xs">Original</span>`;
-                filterContainer.appendChild(noneBtn);
-
-                if (filters[category]) {
-                    filters[category].forEach(f => {
-                        const btn = document.createElement('button');
-                        btn.className = `filter-btn min-w-[80px] h-24 bg-gray-800 rounded flex flex-col items-center justify-center p-1 relative overflow-hidden group ${state.currentFilter === f.id ? 'active' : ''}`;
-                        btn.onclick = () => selectFilter(f.id);
-                        
-                        // Preview thumbnail (using CSS filter on a div if image exists, else icon)
-                        let previewHtml = `<div class="w-full h-12 bg-gray-700 mb-1 rounded" style="filter: ${f.css}"></div>`;
-                        if (state.imageLoaded) {
-                            // Using canvas as background for better preview would be heavy, stick to CSS filter on small img element
-                            previewHtml = `<img src="${state.originalImage.src}" class="w-full h-12 object-cover mb-1 rounded" style="filter: ${f.css}">`;
-                        }
-                        
-                        btn.innerHTML = `
-                            ${previewHtml}
-                            <span class="text-[10px] leading-tight text-center w-full truncate px-1">${f.name}</span>
-                        `;
-                        filterContainer.appendChild(btn);
-                    });
-                }
             }
+        }
 
-            categoryBtns.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    categoryBtns.forEach(b => {
-                        b.classList.remove('text-psc-yellow', 'border-psc-yellow');
-                        b.classList.add('text-gray-400', 'border-transparent');
-                    });
-                    e.target.classList.remove('text-gray-400', 'border-transparent');
-                    e.target.classList.add('text-psc-yellow', 'border', 'border-psc-yellow');
-                    renderFilterCategory(e.target.getAttribute('data-category'));
+        // Generate 10 for each category
+        Object.keys(filterDatabase).forEach(key => generateFilters(key, {}, 10));
+
+        // --- STREAMING_CHUNK: UI Initialization & Event Listeners... ---
+        
+        // Tab switching logic
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Reset styles
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('text-psc-yellow', 'border-b-2', 'border-psc-yellow');
+                    b.classList.add('text-gray-400');
                 });
-            });
-
-            // Initialize filter panel with 'pro'
-            renderFilterCategory('pro');
-
-            function selectFilter(id) {
-                state.currentFilter = id;
-                // Update UI active state in current category
-                document.querySelectorAll('#filter-container .filter-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                event.currentTarget.classList.add('active');
-                render();
-            }
-
-            uploadInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            state.originalImage = img;
-                            state.imageLoaded = true;
-                            placeholder.style.display = 'none';
-                            
-                            // Reset adjustments on new image
-                            resetAdjustments();
-                            
-                            // Re-render filter previews with new image
-                            const activeCatBtn = document.querySelector('.filter-category-btn.text-psc-yellow');
-                            if(activeCatBtn) renderFilterCategory(activeCatBtn.getAttribute('data-category'));
-                            
-                            render();
-                        };
-                        img.src = event.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-
-            // The main render function that draws to canvas
-            function render() {
-                if (!state.imageLoaded || !state.originalImage) return;
-
-                // 1. Calculate Canvas Dimensions based on original image + Frame
-                let imgWidth = state.originalImage.width;
-                let imgHeight = state.originalImage.height;
-                let frameThicknessPx = 0;
-                let bottomFrameExtraPx = 0;
-
-                if (state.frame.type !== 'none') {
-                    // Frame thickness relative to shortest side
-                    const shortestSide = Math.min(imgWidth, imgHeight);
-                    frameThicknessPx = Math.floor(shortestSide * state.frame.thickness);
-                    
-                    if (state.frame.type === 'classic' || state.frame.type === 'vintage' || state.frame.type === 'black') {
-                        bottomFrameExtraPx = frameThicknessPx * 3; // Thicker bottom for polaroid look
-                    } else if (state.frame.type === 'wide') {
-                        // Just regular thick border all around for wide
-                        bottomFrameExtraPx = 0; 
-                    } else if (state.frame.type === 'square') {
-                         // Force square aspect ratio canvas
-                         const maxSide = Math.max(imgWidth, imgHeight);
-                         imgWidth = maxSide;
-                         imgHeight = maxSide;
-                    }
-                }
-
-                canvas.width = imgWidth + (frameThicknessPx * 2);
-                canvas.height = imgHeight + frameThicknessPx + (frameThicknessPx + bottomFrameExtraPx);
-
-                // Clear canvas
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                // 2. Draw Frame Background
-                if (state.frame.type !== 'none') {
-                    let frameColor = state.frame.color;
-                    if (state.frame.type === 'vintage') frameColor = '#f4ebd0'; // Override with vintage color if selected, ignoring picker
-                    if (state.frame.type === 'black') frameColor = '#111111';
-                    
-                    ctx.fillStyle = frameColor;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    
-                    // Add slight inner shadow for vintage/black frames
-                    if (state.frame.type === 'vintage' || state.frame.type === 'black' || state.frame.type === 'classic') {
-                        ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-                        ctx.lineWidth = 2;
-                        ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
-                    }
-                }
-
-                // 3. Draw Image with CSS Filters applied via Canvas context filter
-                ctx.save();
+                // Hide contents
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
                 
-                // Calculate position to draw image (centered if frame is square, else offset by frame thickness)
-                let drawX = frameThicknessPx;
-                let drawY = frameThicknessPx;
-                let drawW = state.originalImage.width;
-                let drawH = state.originalImage.height;
-
-                if (state.frame.type === 'square') {
-                    // Center the image in the square frame
-                    drawX = frameThicknessPx + (imgWidth - state.originalImage.width) / 2;
-                    drawY = frameThicknessPx + (imgHeight - state.originalImage.height) / 2;
-                }
-
-                // Apply Auto Pro enhancement logic if selected
-                // (Note: Real "auto enhance" requires complex pixel analysis. 
-                // We simulate it here by tweaking contrast/brightness slightly based on a generic approach, 
-                // but mostly relying on the CSS filters defined above for the look).
+                // Activate clicked
+                const target = e.target.getAttribute('data-target');
+                e.target.classList.remove('text-gray-400');
+                e.target.classList.add('text-psc-yellow', 'border-b-2', 'border-psc-yellow');
+                document.getElementById(target).classList.remove('hidden');
                 
-                ctx.filter = getCombinedFilterCSS();
-                ctx.drawImage(state.originalImage, drawX, drawY, drawW, drawH);
-                ctx.restore();
-
-                // Lomo Vignette effect (if lomo filter active)
-                if (state.currentFilter === 'retro-4') {
-                    const gradient = ctx.createRadialGradient(
-                        canvas.width/2, canvas.height/2, 0,
-                        canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height)/1.5
-                    );
-                    gradient.addColorStop(0, 'rgba(0,0,0,0)');
-                    gradient.addColorStop(1, 'rgba(0,0,0,0.8)');
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(drawX, drawY, drawW, drawH); // Apply only over image, not frame
-                }
-
-                // Update UI overlay positions to match canvas scaling
-                updateOverlays();
-            }
-
-            
-            // Sync overlay elements with state for drag & drop visual
-            function updateOverlays() {
-                if (!state.imageLoaded) return;
-
-                // Sync text
-                if (state.text.visible) {
-                    dragText.classList.remove('hidden');
-                    // Format text
-                    const dateStr = document.getElementById('text-date').value;
-                    const locStr = document.getElementById('text-location').value;
-                    dragText.innerHTML = `${locStr}<br>${dateStr}`;
-                    dragText.style.color = state.text.color;
-                    
-                    // We don't set absolute pixel size here because the canvas scales in CSS.
-                    // We set a base em/rem and let the user visually drag it.
-                    // The actual rendering size on download will be calculated relative to canvas width.
-                    // For preview, map slider (10-60) to a reasonable rem size
-                    const previewSize = (state.text.size / 30) + 0.5; // roughly 0.8rem to 2.5rem
-                    dragText.style.fontSize = `${previewSize}rem`;
-                    
+                // Show/hide watermark interaction overlay based on tab
+                if(target === 'tab-watermark' && state.image && state.showWatermark) {
+                    interactionDiv.style.display = 'block';
                 } else {
-                    dragText.classList.add('hidden');
-                }
-
-                // Sync Watermark
-                if (state.watermark.visible && state.watermark.loaded) {
-                    dragWm.classList.remove('hidden');
-                    dragWm.style.opacity = state.watermark.opacity;
-                    
-                    // Base size on visual container width for preview
-                    const containerWidth = container.clientWidth;
-                    const displayWidth = containerWidth * state.watermark.scale;
-                    dragWm.style.width = `${displayWidth}px`;
-                    
-                } else {
-                    dragWm.classList.add('hidden');
-                }
-            }
-
-            // Dragging Logic for Overlays
-            let activeDragElement = null;
-            let dragOffsetX = 0, dragOffsetY = 0;
-
-            function startDrag(e, type) {
-                if(e.type === 'touchstart') e.preventDefault(); // Prevent scrolling while dragging
-                
-                activeDragElement = type;
-                const el = type === 'watermark' ? dragWm : dragText;
-                
-                let clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-                let clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-                
-                const rect = el.getBoundingClientRect();
-                dragOffsetX = clientX - rect.left;
-                dragOffsetY = clientY - rect.top;
-            }
-
-            function doDrag(e) {
-                if (!activeDragElement) return;
-                
-                let clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-                let clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-                
-                const el = activeDragElement === 'watermark' ? dragWm : dragText;
-                const overlayRect = overlay.getBoundingClientRect();
-                
-                let newX = clientX - dragOffsetX - overlayRect.left;
-                let newY = clientY - dragOffsetY - overlayRect.top;
-                
-                // Constrain to overlay bounds roughly
-                newX = Math.max(0, Math.min(newX, overlayRect.width - el.offsetWidth));
-                newY = Math.max(0, Math.min(newY, overlayRect.height - el.offsetHeight));
-                
-                el.style.left = `${newX}px`;
-                el.style.top = `${newY}px`;
-                
-                // Update state relative positions (0 to 1) based on visual overlay
-                if (activeDragElement === 'watermark') {
-                    state.watermark.x = newX / overlayRect.width;
-                    state.watermark.y = newY / overlayRect.height;
-                } else {
-                    state.text.x = newX / overlayRect.width;
-                    state.text.y = newY / overlayRect.height;
-                }
-            }
-
-            function stopDrag() {
-                activeDragElement = null;
-            }
-
-            // Mouse Events
-            dragWm.addEventListener('mousedown', (e) => startDrag(e, 'watermark'));
-            dragText.addEventListener('mousedown', (e) => startDrag(e, 'text'));
-            document.addEventListener('mousemove', doDrag);
-            document.addEventListener('mouseup', stopDrag);
-
-            // Touch Events
-            dragWm.addEventListener('touchstart', (e) => startDrag(e, 'watermark'), {passive: false});
-            dragText.addEventListener('touchstart', (e) => startDrag(e, 'text'), {passive: false});
-            document.addEventListener('touchmove', doDrag, {passive: false});
-            document.addEventListener('touchend', stopDrag);
-
-            // Initial positioning
-            dragWm.style.left = `${state.watermark.x * 100}%`;
-            dragWm.style.top = `${state.watermark.y * 100}%`;
-            dragText.style.left = `${state.text.x * 100}%`;
-            dragText.style.top = `${state.text.y * 100}%`;
-
-            
-            // Frame Controls
-            document.querySelectorAll('.frame-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    document.querySelectorAll('.frame-btn').forEach(b => b.classList.remove('active'));
-                    e.currentTarget.classList.add('active');
-                    state.frame.type = e.currentTarget.getAttribute('data-frame');
-                    render();
-                });
-            });
-            document.getElementById('frame-thickness').addEventListener('input', (e) => {
-                state.frame.thickness = parseFloat(e.target.value);
-                render();
-            });
-            document.getElementById('frame-color').addEventListener('input', (e) => {
-                state.frame.color = e.target.value;
-                if(state.frame.type !== 'none') render();
-            });
-
-            // Text Controls
-            const toggleTextBtn = document.getElementById('toggle-text');
-            const textControls = document.getElementById('text-controls');
-            
-            toggleTextBtn.addEventListener('change', (e) => {
-                state.text.visible = e.target.checked;
-                if (state.text.visible) {
-                    textControls.classList.remove('opacity-50', 'pointer-events-none');
-                } else {
-                    textControls.classList.add('opacity-50', 'pointer-events-none');
-                }
-                updateOverlays();
-            });
-
-            ['text-location', 'text-date'].forEach(id => {
-                document.getElementById(id).addEventListener('input', updateOverlays);
-            });
-            
-            document.getElementById('text-size').addEventListener('input', (e) => {
-                state.text.size = parseInt(e.target.value);
-                updateOverlays();
-            });
-            document.getElementById('text-color').addEventListener('input', (e) => {
-                state.text.color = e.target.value;
-                updateOverlays();
-            });
-
-            // Watermark Controls
-            const toggleWmBtn = document.getElementById('toggle-watermark');
-            const wmControls = document.getElementById('watermark-controls');
-            
-            toggleWmBtn.addEventListener('change', (e) => {
-                state.watermark.visible = e.target.checked;
-                if (state.watermark.visible) {
-                    wmControls.classList.remove('opacity-50', 'pointer-events-none');
-                } else {
-                    wmControls.classList.add('opacity-50', 'pointer-events-none');
-                }
-                updateOverlays();
-            });
-
-            document.getElementById('upload-watermark').addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        state.watermark.img.onload = () => {
-                            dragWm.src = state.watermark.img.src;
-                            updateOverlays();
-                        };
-                        state.watermark.img.src = event.target.result;
-                    };
-                    reader.readAsDataURL(file);
+                    interactionDiv.style.display = 'none';
                 }
             });
+        });
 
-            document.getElementById('watermark-size').addEventListener('input', (e) => {
-                state.watermark.scale = parseFloat(e.target.value);
-                updateOverlays();
-            });
-            document.getElementById('watermark-opacity').addEventListener('input', (e) => {
-                state.watermark.opacity = parseFloat(e.target.value);
-                updateOverlays();
-            });
-
-            // Adjustment Controls
-            function resetAdjustments() {
-                state.adjustments = { brightness: 100, contrast: 100, saturate: 100 };
-                document.getElementById('adj-exposure').value = 0;
-                document.getElementById('val-exposure').innerText = '0';
-                document.getElementById('adj-contrast').value = 0;
-                document.getElementById('val-contrast').innerText = '0';
-                document.getElementById('adj-saturation').value = 0;
-                document.getElementById('val-saturation').innerText = '0';
-            }
-
-            document.getElementById('btn-reset-adjust').addEventListener('click', () => {
-                resetAdjustments();
-                render();
-            });
-
-            ['exposure', 'contrast', 'saturation'].forEach(type => {
-                const input = document.getElementById(`adj-${type}`);
-                input.addEventListener('input', (e) => {
-                    const val = parseInt(e.target.value);
-                    document.getElementById(e.target.getAttribute('data-val-id')).innerText = val > 0 ? `+${val}` : val;
-                    
-                    if (type === 'exposure') state.adjustments.brightness = 100 + val;
-                    if (type === 'contrast') state.adjustments.contrast = 100 + val;
-                    if (type === 'saturation') state.adjustments.saturate = 100 + val;
-                    
-                    render();
-                });
-            });
-
-            downloadBtn.addEventListener('click', () => {
-                if (!state.imageLoaded) {
-                    alert('Silakan unggah atau ambil foto terlebih dahulu.');
-                    return;
-                }
-
-                // 1. Create a temporary high-res canvas
-                const exportCanvas = document.createElement('canvas');
-                const exportCtx = exportCanvas.getContext('2d');
-                
-                // Set dimensions exactly to main canvas dimensions (which are based on original image + frame)
-                exportCanvas.width = canvas.width;
-                exportCanvas.height = canvas.height;
-                
-                // 2. Redraw everything exactly as render() does, but onto exportCanvas
-                // Draw Frame
-                if (state.frame.type !== 'none') {
-                    let frameColor = state.frame.color;
-                    if (state.frame.type === 'vintage') frameColor = '#f4ebd0';
-                    if (state.frame.type === 'black') frameColor = '#111111';
-                    
-                    exportCtx.fillStyle = frameColor;
-                    exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-                    
-                    if (state.frame.type === 'vintage' || state.frame.type === 'black' || state.frame.type === 'classic') {
-                        exportCtx.strokeStyle = 'rgba(0,0,0,0.1)';
-                        exportCtx.lineWidth = Math.max(2, exportCanvas.width * 0.002);
-                        exportCtx.strokeRect(1, 1, exportCanvas.width - 2, exportCanvas.height - 2);
-                    }
-                }
-
-                // Calculate image drawing area
-                const shortestSide = Math.min(state.originalImage.width, state.originalImage.height);
-                const frameThicknessPx = state.frame.type !== 'none' ? Math.floor(shortestSide * state.frame.thickness) : 0;
-                
-                let drawX = frameThicknessPx;
-                let drawY = frameThicknessPx;
-                
-                if (state.frame.type === 'square') {
-                    drawX = frameThicknessPx + (exportCanvas.width - (frameThicknessPx*2) - state.originalImage.width) / 2;
-                    drawY = frameThicknessPx + (exportCanvas.height - (frameThicknessPx*2) - state.originalImage.height) / 2;
-                }
-
-                exportCtx.save();
-                exportCtx.filter = getCombinedFilterCSS();
-                exportCtx.drawImage(state.originalImage, drawX, drawY, state.originalImage.width, state.originalImage.height);
-                exportCtx.restore();
-
-                if (state.currentFilter === 'retro-4') {
-                    const gradient = exportCtx.createRadialGradient(
-                        exportCanvas.width/2, exportCanvas.height/2, 0,
-                        exportCanvas.width/2, exportCanvas.height/2, Math.max(exportCanvas.width, exportCanvas.height)/1.5
-                    );
-                    gradient.addColorStop(0, 'rgba(0,0,0,0)');
-                    gradient.addColorStop(1, 'rgba(0,0,0,0.8)');
-                    exportCtx.fillStyle = gradient;
-                    exportCtx.fillRect(drawX, drawY, state.originalImage.width, state.originalImage.height);
-                }
-
-                // 3. Draw Watermark onto export canvas
-                if (state.watermark.visible && state.watermark.loaded) {
-                    exportCtx.save();
-                    exportCtx.globalAlpha = state.watermark.opacity;
-                    
-                    // Calculate size relative to canvas width
-                    const wmWidth = exportCanvas.width * state.watermark.scale;
-                    const aspect = state.watermark.img.height / state.watermark.img.width;
-                    const wmHeight = wmWidth * aspect;
-                    
-                    // The stored x/y are percentages of the visual overlay. 
-                    // Map them to the export canvas coordinates.
-                    // Note: This mapping is an approximation because visual overlay aspect ratio 
-                    // might differ slightly from canvas aspect ratio depending on CSS layout,
-                    // but it usually works well enough for drag & drop watermarks.
-                    const finalX = state.watermark.x * exportCanvas.width;
-                    const finalY = state.watermark.y * exportCanvas.height;
-                    
-                    exportCtx.drawImage(state.watermark.img, finalX, finalY, wmWidth, wmHeight);
-                    exportCtx.restore();
-                }
-
-                // 4. Draw Text onto export canvas
-                if (state.text.visible) {
-                    const dateStr = document.getElementById('text-date').value;
-                    const locStr = document.getElementById('text-location').value;
-                    
-                    exportCtx.save();
-                    exportCtx.fillStyle = state.text.color;
-                    
-                    // Scale font size based on canvas width (base 24 slider roughly equals 3% of width)
-                    const fontSizePx = exportCanvas.width * (state.text.size / 1000); 
-                    exportCtx.font = `${fontSizePx}px "Courier Prime", monospace`;
-                    exportCtx.textBaseline = 'top';
-                    
-                    const finalX = state.text.x * exportCanvas.width;
-                    const finalY = state.text.y * exportCanvas.height;
-                    
-                    // Draw multiline text
-                    exportCtx.fillText(locStr, finalX, finalY);
-                    exportCtx.fillText(dateStr, finalX, finalY + (fontSizePx * 1.2)); // Line height
-                    
-                    exportCtx.restore();
-                }
-
-                // 5. Trigger Download
-                const link = document.createElement('a');
-                link.download = `PhotoStyle_${Date.now()}.png`;
-                link.href = exportCanvas.toDataURL('image/png', 1.0); // High quality PNG
-                link.click();
-            });
-
-            const videoEl = document.getElementById('camera-feed');
-            const cameraUi = document.getElementById('camera-ui');
-            const btnCamera = document.getElementById('btn-camera');
-            const btnCloseCamera = document.getElementById('btn-close-camera');
-            const btnSwitchCamera = document.getElementById('btn-switch-camera');
-            const btnCapture = document.getElementById('btn-capture');
-            const lensBtns = document.querySelectorAll('.lens-btn');
-            const exposureSlider = document.getElementById('camera-exposure');
-
-            async function openCamera() {
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    try {
-                        const constraints = {
-                            video: {
-                                facingMode: state.camera.facingMode,
-                                // Request high resolution, let browser figure out the aspect ratio, we handle it via object-fit
-                                width: { ideal: 4096 },
-                                height: { ideal: 2160 },
-                                zoom: true // Request zoom capability if available
-                            }
-                        };
-                        
-                        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                        state.camera.stream = stream;
-                        videoEl.srcObject = stream;
-                        
-                        // Get video track for advanced controls (zoom, exposure)
-                        state.camera.videoTrack = stream.getVideoTracks()[0];
-                        state.camera.capabilities = state.camera.videoTrack.getCapabilities();
-                        
-                        cameraUi.style.display = 'flex';
-                        
-                        // Setup Lens (Zoom) buttons if supported
-                        if (state.camera.capabilities && state.camera.capabilities.zoom) {
-                            lensBtns.forEach(btn => btn.style.display = 'block');
-                            // Reset to 1x visually
-                            setLens(1);
-                        } else {
-                            // Hide lens buttons if zoom not supported natively
-                            lensBtns.forEach(btn => btn.style.display = 'none');
-                        }
-
-                        // Setup Exposure compensation if supported
-                        if (state.camera.capabilities && state.camera.capabilities.exposureCompensation) {
-                            exposureSlider.style.display = 'block';
-                            exposureSlider.min = state.camera.capabilities.exposureCompensation.min;
-                            exposureSlider.max = state.camera.capabilities.exposureCompensation.max;
-                            exposureSlider.step = state.camera.capabilities.exposureCompensation.step || 0.1;
-                            exposureSlider.value = state.camera.videoTrack.getSettings().exposureCompensation || 0;
-                        } else {
-                            exposureSlider.style.display = 'none';
-                        }
-
-                    } catch (err) {
-                        console.error("Error accessing camera: ", err);
-                        alert("Tidak dapat mengakses kamera. Pastikan izin telah diberikan.");
-                    }
-                } else {
-                    alert("Browser Anda tidak mendukung fitur kamera.");
-                }
-            }
-
-            function closeCamera() {
-                if (state.camera.stream) {
-                    state.camera.stream.getTracks().forEach(track => track.stop());
-                }
-                cameraUi.style.display = 'none';
-            }
-
-            btnCamera.addEventListener('click', openCamera);
-            btnCloseCamera.addEventListener('click', closeCamera);
-            
-            btnSwitchCamera.addEventListener('click', () => {
-                state.camera.facingMode = state.camera.facingMode === 'user' ? 'environment' : 'user';
-                closeCamera();
-                setTimeout(openCamera, 300); // Small delay to ensure hardware is released
-            });
-
-            // Exposure control listener
-            exposureSlider.addEventListener('input', (e) => {
-                if (state.camera.videoTrack && state.camera.capabilities && state.camera.capabilities.exposureCompensation) {
-                    try {
-                        state.camera.videoTrack.applyConstraints({
-                            advanced: [{ exposureCompensation: parseFloat(e.target.value) }]
-                        });
-                    } catch (err) {
-                        console.error("Exposure change not supported:", err);
-                    }
-                }
-            });
-
-            // Lens (Zoom) control listener
-            function setLens(zoomLevel) {
-                if (state.camera.videoTrack && state.camera.capabilities && state.camera.capabilities.zoom) {
-                    try {
-                        // Map 1x, 2x, 3x to device's zoom range. 
-                        // Realistically, many webcams don't support true optical zoom via web API, 
-                        // but mobile browsers might expose it for multi-lens setups.
-                        const minZoom = state.camera.capabilities.zoom.min || 1;
-                        const maxZoom = state.camera.capabilities.zoom.max || 3;
-                        
-                        // Simple mapping: 1x = min, 3x = max, 2x = middle (or just direct value if supported)
-                        let targetZoom = zoomLevel;
-                        // Clamp to capabilities
-                        targetZoom = Math.max(minZoom, Math.min(targetZoom, maxZoom));
-
-                        state.camera.videoTrack.applyConstraints({
-                            advanced: [{ zoom: targetZoom }]
-                        });
-                        
-                        // Update UI
-                        lensBtns.forEach(b => {
-                            b.classList.remove('text-white', 'active-lens');
-                            b.classList.add('text-gray-400');
-                        });
-                        const activeBtn = document.querySelector(`.lens-btn[data-zoom="${zoomLevel}"]`);
-                        if(activeBtn) {
-                            activeBtn.classList.remove('text-gray-400');
-                            activeBtn.classList.add('text-white', 'active-lens');
-                        }
-
-                    } catch (err) {
-                        console.error("Zoom not supported:", err);
-                    }
-                }
-            }
-
-            lensBtns.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const zoom = parseFloat(e.target.getAttribute('data-zoom'));
-                    setLens(zoom);
-                });
-            });
-
-            // Capture photo
-            btnCapture.addEventListener('click', () => {
-                if (!videoEl.videoWidth) return;
-
-                // Create a temporary canvas to capture the raw video frame
-                const capCanvas = document.createElement('canvas');
-                capCanvas.width = videoEl.videoWidth;
-                capCanvas.height = videoEl.videoHeight;
-                const capCtx = capCanvas.getContext('2d');
-                
-                // Draw current frame. No cropping, raw feed.
-                capCtx.drawImage(videoEl, 0, 0, capCanvas.width, capCanvas.height);
-                
-                // Convert to Image to feed into our standard rendering pipeline
-                const img = new Image();
-                img.onload = () => {
-                    state.originalImage = img;
-                    state.imageLoaded = true;
-                    placeholder.style.display = 'none';
-                    resetAdjustments();
-                    closeCamera();
-                    
-                    // Re-render filters for preview
-                    const activeCatBtn = document.querySelector('.filter-category-btn.text-psc-yellow');
-                    if(activeCatBtn) renderFilterCategory(activeCatBtn.getAttribute('data-category'));
-                    
+        // Filter UI Population
+        const filterGrid = document.getElementById('filter-grid');
+        const categorySelect = document.getElementById('filter-category');
+        
+        function renderFilterButtons(category) {
+            filterGrid.innerHTML = '';
+            filterDatabase[category].forEach((f, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn bg-gray-800 border border-gray-700 text-gray-300 text-xs py-2 px-1 rounded hover:border-psc-yellow focus:outline-none';
+                btn.textContent = f.name;
+                btn.onclick = () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.activeFilterCSS = f.css;
                     render();
                 };
-                img.src = capCanvas.toDataURL('image/jpeg', 1.0); // High quality capture
-                
-                // Visual feedback for capture
-                btnCapture.querySelector('div').style.backgroundColor = '#999';
-                setTimeout(() => {
-                    btnCapture.querySelector('div').style.backgroundColor = '#fff';
-                }, 100);
+                filterGrid.appendChild(btn);
             });
+        }
+        
+        categorySelect.addEventListener('change', (e) => renderFilterButtons(e.target.value));
+        renderFilterButtons('pro'); // Initial load
+        
+        document.getElementById('btn-reset-filter').addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            state.activeFilterCSS = '';
+            render();
+        });
 
-            // Handle Window Resize to keep canvas responsive
-            window.addEventListener('resize', () => {
-                if(state.imageLoaded) {
-                    // Re-calculate overlays relative to new container size
-                    updateOverlays();
+        // --- STREAMING_CHUNK: Frame & Text Input Handlers... ---
+        
+        // Frame Handlers
+        document.querySelectorAll('.frame-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.frame-btn').forEach(b => {
+                    b.classList.remove('border-psc-yellow', 'text-psc-yellow');
+                    b.classList.add('border-gray-700');
+                });
+                const target = e.target;
+                target.classList.remove('border-gray-700');
+                target.classList.add('border-psc-yellow', 'text-psc-yellow');
+                
+                state.frameType = target.getAttribute('data-type');
+                render();
+            });
+        });
+
+        document.getElementById('frame-thickness').addEventListener('input', (e) => {
+            state.frameThickness = parseFloat(e.target.value);
+            render();
+        });
+        document.getElementById('frame-color').addEventListener('input', (e) => {
+            state.frameColor = e.target.value;
+            render();
+        });
+
+        // Text Handlers
+        ['date', 'year', 'location'].forEach(id => {
+            document.getElementById(`text-${id}`).addEventListener('input', (e) => {
+                state[`text${id.charAt(0).toUpperCase() + id.slice(1)}`] = e.target.value;
+                render();
+            });
+        });
+        document.getElementById('text-color').addEventListener('input', (e) => {
+            state.textColor = e.target.value;
+            render();
+        });
+
+        // Watermark Handlers
+        document.getElementById('watermark-toggle').addEventListener('change', (e) => {
+            state.showWatermark = e.target.checked;
+            interactionDiv.style.display = (state.showWatermark && state.image) ? 'block' : 'none';
+            render();
+        });
+        document.getElementById('watermark-opacity').addEventListener('input', (e) => {
+            state.watermarkOpacity = parseFloat(e.target.value);
+            render();
+        });
+        document.getElementById('watermark-size').addEventListener('input', (e) => {
+            state.watermarkSize = parseFloat(e.target.value);
+            render();
+        });
+
+        // Custom Watermark Upload
+        document.getElementById('watermark-input').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    state.watermarkImage = img;
+                    render();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // --- STREAMING_CHUNK: File Upload & Camera Logic... ---
+
+        // File Upload
+        const uploadInput = document.getElementById('upload-input');
+        document.getElementById('btn-upload-trigger').addEventListener('click', () => uploadInput.click());
+        
+        uploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            loadPhotoFromFile(file);
+        });
+
+        function loadPhotoFromFile(file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    stopCamera(); // Stop cam if running
+                    state.image = img;
+                    state.originalWidth = img.width;
+                    state.originalHeight = img.height;
+                    document.getElementById('no-image-text').style.display = 'none';
+                    render();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Camera WebRTC Logic
+        const videoElement = document.getElementById('camera-video');
+        const camControls = document.getElementById('camera-controls');
+        const camStatus = document.getElementById('cam-status');
+        
+        document.getElementById('btn-start-cam').addEventListener('click', startCamera);
+        document.getElementById('btn-stop-cam').addEventListener('click', stopCamera);
+        
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } 
+                });
+                state.stream = stream;
+                videoElement.srcObject = stream;
+                state.videoTrack = stream.getVideoTracks()[0];
+                
+                // Check capabilities
+                setTimeout(() => {
+                    const capabilities = state.videoTrack.getCapabilities();
+                    console.log("Camera Capabilities:", capabilities);
+                }, 500);
+
+                camControls.classList.remove('hidden');
+                camStatus.classList.remove('hidden');
+                
+                // Hide canvas while recording, show video (styled via CSS mapping to canvas space)
+                canvas.style.display = 'none';
+                videoElement.style.display = 'block';
+                videoElement.style.width = '100%';
+                videoElement.style.height = '100%';
+                videoElement.style.objectFit = 'contain';
+                document.getElementById('preview-container').appendChild(videoElement);
+                document.getElementById('no-image-text').style.display = 'none';
+
+            } catch (err) {
+                alert("Gagal mengakses kamera. Pastikan izin diberikan.");
+                console.error(err);
+            }
+        }
+
+        function stopCamera() {
+            if (state.stream) {
+                state.stream.getTracks().forEach(track => track.stop());
+                state.stream = null;
+            }
+            camControls.classList.add('hidden');
+            camStatus.classList.add('hidden');
+            videoElement.style.display = 'none';
+            canvas.style.display = 'block';
+        }
+
+        // Camera Zoom & Exposure Control
+        document.querySelectorAll('.cam-zoom-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const zoom = parseFloat(e.target.getAttribute('data-zoom'));
+                state.camZoom = zoom;
+                
+                // UI styling
+                document.querySelectorAll('.cam-zoom-btn').forEach(b => b.classList.remove('bg-psc-yellow', 'text-black'));
+                e.target.classList.add('bg-psc-yellow', 'text-black');
+
+                // Try hardware zoom first
+                if (state.videoTrack) {
+                    const capabilities = state.videoTrack.getCapabilities();
+                    if (capabilities.zoom) {
+                        // Map 1x, 2x, 3x to device zoom range
+                        const step = (capabilities.zoom.max - capabilities.zoom.min) / 3;
+                        const hwZoom = capabilities.zoom.min + (zoom - 1) * step;
+                        state.videoTrack.applyConstraints({ advanced: [{ zoom: Math.min(hwZoom, capabilities.zoom.max) }] }).catch(e=>console.log("HW Zoom error", e));
+                    } else {
+                        // Fallback: Software zoom via CSS transform on video element temporarily
+                        videoElement.style.transform = `scale(${zoom})`;
+                    }
                 }
             });
-
         });
+
+        document.getElementById('cam-exposure').addEventListener('input', (e) => {
+            const exp = parseFloat(e.target.value);
+            state.camExposure = exp;
+            
+            if (state.videoTrack) {
+                const capabilities = state.videoTrack.getCapabilities();
+                // Note: exposureCompensation requires advanced constraint
+                if (capabilities.exposureCompensation) {
+                    state.videoTrack.applyConstraints({ advanced: [{ exposureCompensation: exp }] }).catch(e=>console.log("HW Exp error", e));
+                } else {
+                    // Fallback CSS brightness
+                    const brightness = 1 + (exp * 0.3); // Map -2,2 to 0.4 - 1.6
+                    videoElement.style.filter = `brightness(${brightness})`;
+                }
+            }
+        });
+
+        // Capture Photo
+        document.getElementById('btn-capture').addEventListener('click', () => {
+            // Draw video to a temporary canvas to get the full res image
+            const tempCanvas = document.createElement('canvas');
+            const vw = videoElement.videoWidth;
+            const vh = videoElement.videoHeight;
+            
+            // Handle software zoom cropping if hardware zoom wasn't applied
+            // (If HW zoom worked, vw/vh already contain the zoomed image)
+            const zoom = state.camZoom;
+            tempCanvas.width = vw;
+            tempCanvas.height = vh;
+            const tCtx = tempCanvas.getContext('2d');
+            
+            // Apply software exposure if HW not supported
+            const capabilities = state.videoTrack ? state.videoTrack.getCapabilities() : {};
+            if (!capabilities.exposureCompensation) {
+                 const brightness = 1 + (state.camExposure * 0.3);
+                 tCtx.filter = `brightness(${brightness})`;
+            }
+
+            // Draw with crop for zoom if HW zoom not supported
+            if (!capabilities.zoom && zoom > 1) {
+                const sw = vw / zoom;
+                const sh = vh / zoom;
+                const sx = (vw - sw) / 2;
+                const sy = (vh - sh) / 2;
+                tCtx.drawImage(videoElement, sx, sy, sw, sh, 0, 0, vw, vh);
+            } else {
+                tCtx.drawImage(videoElement, 0, 0, vw, vh);
+            }
+            
+            tCtx.filter = 'none'; // reset
+
+            const img = new Image();
+            img.onload = () => {
+                state.image = img;
+                state.originalWidth = img.width;
+                state.originalHeight = img.height;
+                stopCamera();
+                render();
+            };
+            img.src = tempCanvas.toDataURL('image/jpeg', 1.0);
+        });
+
+
+        // --- STREAMING_CHUNK: Core Rendering Engine ---
+        // This function draws the image, applies CSS filters, draws frames, text, and watermark
+        function render() {
+            if (!state.image) return;
+
+            // 1. Calculate Frame Layout
+            let padT = 0, padB = 0, padL = 0, padR = 0;
+            const basePad = Math.max(state.originalWidth, state.originalHeight) * 0.05 * state.frameThickness;
+
+            switch(state.frameType) {
+                case 'classic': 
+                    padT = padL = padR = basePad; 
+                    padB = basePad * 3.5; 
+                    break;
+                case 'square':
+                    // Make final canvas 1:1, pad accordingly
+                    const maxDim = Math.max(state.originalWidth, state.originalHeight);
+                    padL = padR = (maxDim - state.originalWidth) / 2 + basePad;
+                    padT = (maxDim - state.originalHeight) / 2 + basePad;
+                    padB = padT + basePad * 2; 
+                    break;
+                case 'wide':
+                    padT = padB = basePad;
+                    padL = padR = basePad * 2;
+                    break;
+                case 'tall':
+                    padL = padR = basePad;
+                    padT = basePad;
+                    padB = basePad * 4;
+                    break;
+                case 'borderless':
+                    // Minimal border
+                    padT = padB = padL = padR = basePad * 0.2;
+                    break;
+                case 'none':
+                default:
+                    padT = padB = padL = padR = 0;
+            }
+
+            // Final Canvas dimensions
+            canvas.width = state.originalWidth + padL + padR;
+            canvas.height = state.originalHeight + padT + padB;
+
+            // 2. Draw Frame Background
+            if (state.frameType !== 'none') {
+                ctx.fillStyle = state.frameColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // 3. Draw Main Image with Filters
+            ctx.save();
+            if (state.activeFilterCSS) {
+                ctx.filter = state.activeFilterCSS;
+            }
+            ctx.drawImage(state.image, padL, padT, state.originalWidth, state.originalHeight);
+            ctx.restore();
+
+            // 4. Draw Text (Typewriter style)
+            if (state.frameType !== 'none' && state.frameType !== 'borderless') {
+                ctx.fillStyle = state.textColor;
+                // Font size relative to canvas width
+                const fontSize = Math.max(canvas.width * 0.02, 20);
+                ctx.font = `bold ${fontSize}px "Courier New", Courier, monospace`;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                
+                const textY = canvas.height - (padB / 2);
+                const textX = padL;
+
+                // Left: Date & Year
+                let dateStr = state.textDate + (state.textDate && state.textYear ? ' ' : '') + state.textYear;
+                if(dateStr) ctx.fillText(dateStr, textX, textY);
+                
+                // Right: Location
+                if (state.textLocation) {
+                    ctx.textAlign = 'right';
+                    ctx.fillText(state.textLocation, canvas.width - padR, textY);
+                }
+            }
+
+            // 5. Draw Watermark
+            if (state.showWatermark && state.watermarkImage) {
+                ctx.save();
+                ctx.globalAlpha = state.watermarkOpacity;
+                
+                // Size is relative to canvas width
+                const wmWidth = canvas.width * state.watermarkSize;
+                const aspect = state.watermarkImage.height / state.watermarkImage.width;
+                const wmHeight = wmWidth * aspect;
+                
+                // Position is 0-1 mapped to canvas bounds (minus watermark size to keep in bounds)
+                const maxX = canvas.width - wmWidth;
+                const maxY = canvas.height - wmHeight;
+                
+                const wmX = state.watermarkPos.x * maxX;
+                const wmY = state.watermarkPos.y * maxY;
+
+                ctx.drawImage(state.watermarkImage, wmX, wmY, wmWidth, wmHeight);
+                ctx.restore();
+            }
+        }
+
+
+        // --- STREAMING_CHUNK: Watermark Interaction (Drag & Drop) ---
+        // Handles moving the watermark using mouse/touch on the overlay div
+        
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            
+            // Calculate scale based on object-fit: contain logic
+            const canvasRatio = canvas.width / canvas.height;
+            const containerRatio = rect.width / rect.height;
+            
+            let displayWidth = rect.width;
+            let displayHeight = rect.height;
+            let offsetX = 0;
+            let offsetY = 0;
+
+            if (canvasRatio > containerRatio) {
+                // Letterboxed top/bottom
+                displayHeight = rect.width / canvasRatio;
+                offsetY = (rect.height - displayHeight) / 2;
+            } else {
+                // Pillarboxed left/right
+                displayWidth = rect.height * canvasRatio;
+                offsetX = (rect.width - displayWidth) / 2;
+            }
+
+            // Map click to internal canvas coordinates
+            const x = ((clientX - rect.left - offsetX) / displayWidth) * canvas.width;
+            const y = ((clientY - rect.top - offsetY) / displayHeight) * canvas.height;
+            
+            return { x, y };
+        }
+
+        function updateWatermarkPos(e) {
+            if (!state.isDraggingWatermark || !state.image || !state.showWatermark) return;
+            e.preventDefault();
+            
+            const pos = getPointerPos(e);
+            
+            // Size mapping
+            const wmWidth = canvas.width * state.watermarkSize;
+            const aspect = state.watermarkImage.height / state.watermarkImage.width;
+            const wmHeight = wmWidth * aspect;
+            
+            const maxX = canvas.width - wmWidth;
+            const maxY = canvas.height - wmHeight;
+            
+            // Center the watermark on mouse, then normalize to 0-1
+            let newX = (pos.x - (wmWidth/2)) / maxX;
+            let newY = (pos.y - (wmHeight/2)) / maxY;
+            
+            // Clamp
+            newX = Math.max(0, Math.min(1, newX));
+            newY = Math.max(0, Math.min(1, newY));
+            
+            state.watermarkPos = { x: newX, y: newY };
+            
+            // Use requestAnimationFrame for smooth drawing
+            requestAnimationFrame(render);
+        }
+
+        interactionDiv.addEventListener('mousedown', (e) => { state.isDraggingWatermark = true; updateWatermarkPos(e); });
+        interactionDiv.addEventListener('mousemove', updateWatermarkPos);
+        window.addEventListener('mouseup', () => { state.isDraggingWatermark = false; });
+        
+        interactionDiv.addEventListener('touchstart', (e) => { state.isDraggingWatermark = true; updateWatermarkPos(e); }, {passive: false});
+        interactionDiv.addEventListener('touchmove', updateWatermarkPos, {passive: false});
+        window.addEventListener('touchend', () => { state.isDraggingWatermark = false; });
+
+        // --- STREAMING_CHUNK: High-Res Export & Download ---
+        document.getElementById('btn-download').addEventListener('click', () => {
+            if (!state.image) {
+                alert("Silakan upload foto atau ambil gambar dari kamera terlebih dahulu.");
+                return;
+            }
+
+            // Ensure rendering is up to date
+            render();
+            
+            // Convert to Blob for memory efficiency on high-res images
+            canvas.toBlob((blob) => {
+                if(!blob) {
+                    alert("Terjadi kesalahan saat memproses gambar.");
+                    return;
+                }
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                // Generate distinct filename
+                const date = new Date();
+                const fname = `PSC_Export_${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}_${date.getTime()}.jpg`;
+                a.download = fname;
+                
+                document.body.appendChild(a);
+                a.click();
+                
+                // Cleanup
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+            }, 'image/jpeg', 0.95); // High quality JPG
+        });
+
+        // Window Resize Handler (ensure canvas stays crisp visually)
+        window.addEventListener('resize', () => {
+            if (state.image) {
+                requestAnimationFrame(render);
+            }
+        });
+
     </script>
 </body>
 </html>
