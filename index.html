@@ -133,7 +133,6 @@
     <main class="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
         
         <!-- Main Preview Area -->
-        <!-- Pada mobile mengambil 55% tinggi layar, di desktop mengambil sisa ruang -->
         <section class="w-full h-[55%] md:h-full md:flex-1 relative bg-black flex flex-col shrink-0">
             <div id="preview-container">
                 <span id="no-image-text" class="text-gray-500 text-sm md:text-base absolute z-0 select-none pointer-events-none text-center px-4">
@@ -143,7 +142,7 @@
                 <div id="watermark-interaction" style="display:none;"></div>
             </div>
             
-            <!-- Quick Camera Tools (Overlaid on bottom of preview) -->
+            <!-- Quick Camera Tools -->
             <div id="camera-controls" class="hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-psc-dark/90 backdrop-blur border border-gray-700 p-2 md:p-3 rounded-xl flex items-center gap-2 md:gap-4 z-20 shadow-xl w-11/12 md:w-auto justify-between md:justify-center">
                 <div class="flex flex-col text-[10px] md:text-xs text-gray-400">
                     <label class="mb-1 hidden md:block">Exposure</label>
@@ -161,10 +160,9 @@
         </section>
 
         <!-- Controls Sidebar -->
-        <!-- Pada mobile mengambil sisa ruang bawah, di desktop lebar tetap -->
         <aside class="w-full h-[45%] md:h-full md:w-96 bg-psc-dark border-t md:border-t-0 md:border-l border-gray-800 flex flex-col z-10 shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.3)] md:shadow-2xl">
             
-            <!-- Tabs (Scrollable horizontal on small screens) -->
+            <!-- Tabs -->
             <div class="flex border-b border-gray-800 bg-black text-xs font-semibold overflow-x-auto shrink-0 hide-scrollbar">
                 <button class="tab-btn min-w-[70px] flex-1 py-3 px-2 text-psc-yellow border-b-2 border-psc-yellow whitespace-nowrap transition-colors" data-target="tab-camera">Kamera</button>
                 <button class="tab-btn min-w-[70px] flex-1 py-3 px-2 text-gray-400 hover:text-white whitespace-nowrap transition-colors" data-target="tab-filters">Filter</button>
@@ -179,7 +177,7 @@
                 <!-- CAMERA TAB -->
                 <div id="tab-camera" class="tab-content block space-y-4">
                     <h2 class="text-base md:text-lg font-bold text-white mb-2 border-b border-gray-700 pb-2">Pengaturan Kamera</h2>
-                    <p class="text-[11px] md:text-xs text-gray-400 mb-4 leading-relaxed">Aktifkan kamera untuk mengambil gambar langsung dengan dukungan lensa optical (jika hardware mendukung) dan exposure control. Pastikan memberikan izin akses kamera.</p>
+                    <p class="text-[11px] md:text-xs text-gray-400 mb-4 leading-relaxed">Aktifkan kamera untuk mengambil gambar langsung dengan dukungan lensa optical (jika hardware mendukung) dan exposure control.</p>
                     <button id="btn-start-cam" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white py-3 md:py-4 rounded-lg flex items-center justify-center gap-2 transition font-semibold shadow-inner">
                         <svg class="w-5 h-5 text-psc-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         Buka Kamera Belakang
@@ -203,11 +201,8 @@
                             <option value="sony">Kamera: Sony (10)</option>
                         </select>
                     </div>
-                    <!-- Filter Grid -->
                     <div class="flex-1 overflow-y-auto pr-1 pb-4">
-                        <div id="filter-grid" class="grid grid-cols-2 gap-2">
-                            <!-- Filters populated by JS -->
-                        </div>
+                        <div id="filter-grid" class="grid grid-cols-2 gap-2"></div>
                     </div>
                     <div class="pt-3 border-t border-gray-800 mt-auto shrink-0 bg-psc-dark">
                         <button id="btn-reset-filter" class="w-full bg-red-900/30 text-red-400 border border-red-900 hover:bg-red-900/50 py-2.5 rounded text-sm transition font-semibold">Hapus Filter</button>
@@ -241,29 +236,49 @@
                 </div>
 
                 <!-- TEXT TAB -->
-                <div id="tab-text" class="tab-content hidden space-y-4">
-                    <p class="text-[11px] md:text-xs text-gray-400 mb-4 bg-gray-900/50 p-2 rounded">Teks bergaya mesin ketik pada bagian bawah foto (hanya terlihat jika menggunakan Frame aktif).</p>
+                <div id="tab-text" class="tab-content hidden space-y-4 pb-4">
+                    <p class="text-[11px] md:text-xs text-gray-400 mb-3 bg-gray-900/50 p-2 rounded">Teks bergaya mesin ketik. Gunakan slider untuk mengatur ukuran dan posisi secara leluasa.</p>
                     
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-300 mb-1">Tanggal</label>
-                            <input type="text" id="text-date" placeholder="Mis: 12 OKT" class="w-full bg-black border border-gray-700 text-white p-2.5 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none placeholder-gray-700 transition">
+                            <input type="text" id="text-date" placeholder="Tgl (Mis: 12 OKT)" class="w-full bg-black border border-gray-700 text-white p-2.5 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none placeholder-gray-700 transition">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-300 mb-1">Tahun</label>
-                            <input type="text" id="text-year" placeholder="Mis: 1998" class="w-full bg-black border border-gray-700 text-white p-2.5 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none placeholder-gray-700 transition">
+                            <input type="text" id="text-year" placeholder="Thn (Mis: 1998)" class="w-full bg-black border border-gray-700 text-white p-2.5 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none placeholder-gray-700 transition">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">Lokasi / Keterangan Kanan</label>
-                        <input type="text" id="text-location" placeholder="Mis: JAKARTA, ID" class="w-full bg-black border border-gray-700 text-white p-2.5 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none placeholder-gray-700 transition">
+                        <input type="text" id="text-location" placeholder="Lokasi / Teks Bebas" class="w-full bg-black border border-gray-700 text-white p-2.5 rounded font-mono text-sm focus:border-psc-yellow focus:outline-none placeholder-gray-700 transition">
                     </div>
-                    <div class="pt-2">
-                        <label class="block text-xs font-semibold text-gray-300 mb-2">Warna Teks</label>
-                        <div class="flex items-center gap-3">
-                            <input type="color" id="text-color" value="#222222" class="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0">
-                            <span class="text-xs text-gray-400">Pilih warna kontras dengan frame</span>
+
+                    <div class="pt-2 border-t border-gray-800 mt-2">
+                        <label class="block text-[11px] font-semibold text-gray-300 mb-2">Tata Letak (Alignment)</label>
+                        <div class="flex gap-1">
+                            <button class="text-align-btn flex-1 py-2 bg-gray-800 border border-psc-yellow text-psc-yellow rounded text-[10px] md:text-xs font-bold transition" data-align="split">Pisah</button>
+                            <button class="text-align-btn flex-1 py-2 bg-gray-800 border border-gray-700 text-gray-400 hover:text-white rounded text-[10px] md:text-xs font-bold transition" data-align="left">Kiri</button>
+                            <button class="text-align-btn flex-1 py-2 bg-gray-800 border border-gray-700 text-gray-400 hover:text-white rounded text-[10px] md:text-xs font-bold transition" data-align="center">Tengah</button>
+                            <button class="text-align-btn flex-1 py-2 bg-gray-800 border border-gray-700 text-gray-400 hover:text-white rounded text-[10px] md:text-xs font-bold transition" data-align="right">Kanan</button>
                         </div>
+                    </div>
+
+                    <div class="space-y-4 pt-3 border-t border-gray-800 mt-2">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-300 mb-1 flex justify-between">Ukuran <span id="val-text-size" class="text-psc-yellow">1.0x</span></label>
+                            <input type="range" id="text-size" min="0.5" max="4" step="0.1" value="1.0">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-300 mb-1 flex justify-between">Geser Vertikal (Y) <span id="val-text-y" class="text-psc-yellow">0%</span></label>
+                            <input type="range" id="text-pos-y" min="-50" max="50" step="1" value="0">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-300 mb-1 flex justify-between">Geser Horizontal (X) <span id="val-text-x" class="text-psc-yellow">0%</span></label>
+                            <input type="range" id="text-pos-x" min="-50" max="50" step="1" value="0">
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-gray-800 mt-2 flex justify-between items-center">
+                        <label class="block text-xs font-semibold text-gray-300">Warna Teks</label>
+                        <input type="color" id="text-color" value="#222222" class="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0">
                     </div>
                 </div>
 
@@ -315,25 +330,22 @@
             toast.className = `${bgColor} text-white px-4 py-3 rounded shadow-lg text-sm font-semibold flex items-center justify-between pointer-events-auto border border-white/10`;
             toast.innerHTML = `<span>${message}</span>`;
             
-            // Add initial animation class
             toast.classList.add('toast-enter');
             container.appendChild(toast);
             
-            // Trigger reflow
-            void toast.offsetWidth;
+            void toast.offsetWidth; // Trigger reflow
             
-            // Start enter animation
             toast.classList.remove('toast-enter');
             toast.classList.add('toast-enter-active');
             
             setTimeout(() => {
-                // Start leave animation
                 toast.classList.remove('toast-enter-active');
                 toast.classList.add('toast-leave-active');
-                setTimeout(() => toast.remove(), 300); // match transition duration
+                setTimeout(() => toast.remove(), 300);
             }, 3500);
         }
 
+        // --- STREAMING_CHUNK: Inisialisasi State Aplikasi Terbaru... ---
         // --- CORE STATE ---
         const state = {
             image: null, 
@@ -354,11 +366,15 @@
             frameThickness: 1.0,
             frameColor: '#ffffff',
             
-            // Text
+            // Text Variables (Diperbarui dengan kontrol penuh)
             textDate: '',
             textYear: '',
             textLocation: '',
             textColor: '#222222',
+            textAlign: 'split',  // 'split', 'left', 'center', 'right'
+            textSize: 1.0,       // scale multiplier
+            textOffsetY: 0,      // % movement on Y axis
+            textOffsetX: 0,      // % movement on X axis
             
             // Watermark
             showWatermark: true,
@@ -369,23 +385,17 @@
             isDraggingWatermark: false
         };
 
-        // --- DOM ELEMENTS ---
         const canvas = document.getElementById('main-canvas');
-        // Gunakan willReadFrequently karena toBlob membacanya nanti, tapi hilangkan jika dirasa memperlambat render drag
         const ctx = canvas.getContext('2d', { alpha: false }); 
         const interactionDiv = document.getElementById('watermark-interaction');
         
-        // Hide scrollbar class style inject
         document.head.insertAdjacentHTML('beforeend', '<style>.hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }</style>');
 
-        // --- STREAMING_CHUNK: Pembuatan Logo Default & Database Filter... ---
-        
         function createDefaultLogo() {
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = 300; tempCanvas.height = 300;
             const tCtx = tempCanvas.getContext('2d');
             
-            // Draw shield/circle
             tCtx.beginPath();
             tCtx.arc(150, 150, 130, 0, Math.PI * 2);
             tCtx.strokeStyle = '#fbbf24';
@@ -394,7 +404,6 @@
             tCtx.fillStyle = 'rgba(10,10,10,0.7)';
             tCtx.fill();
             
-            // Draw Text
             tCtx.fillStyle = '#f5f5f5';
             tCtx.font = 'bold 80px "Arial", sans-serif';
             tCtx.textAlign = 'center';
@@ -410,7 +419,6 @@
         }
         createDefaultLogo();
 
-        // Generating Filter Logic
         const filterDatabase = {
             pro: [], cinematic: [], film: [], retro: [], vintage: [],
             leica: [], fuji: [], kodak: [], canon: [], sony: []
@@ -435,9 +443,7 @@
         }
         Object.keys(filterDatabase).forEach(key => generateFilters(key, 10));
 
-        // --- STREAMING_CHUNK: Setup Event Listeners UI... ---
-        
-        // Tab UI
+        // --- STREAMING_CHUNK: Setup Event Listeners untuk UI Teks Baru... ---
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.tab-btn').forEach(b => {
@@ -453,20 +459,17 @@
                 const targetEl = document.getElementById(target);
                 if(targetEl) {
                     targetEl.classList.remove('hidden');
-                    if(target === 'tab-filters') targetEl.classList.add('flex'); // Keep flex layout for filter tab
+                    if(target === 'tab-filters') targetEl.classList.add('flex');
                     else targetEl.classList.add('block');
                 }
-                
-                // Toggle watermark interaction surface
                 interactionDiv.style.display = (target === 'tab-watermark' && state.image && state.showWatermark) ? 'block' : 'none';
             });
         });
 
-        // Filter UI
         const filterGrid = document.getElementById('filter-grid');
         function renderFilterButtons(category) {
             filterGrid.innerHTML = '';
-            filterDatabase[category].forEach((f, index) => {
+            filterDatabase[category].forEach((f) => {
                 const btn = document.createElement('button');
                 btn.className = 'filter-btn bg-gray-800 border border-gray-700 text-gray-300 text-xs py-3 px-1 rounded hover:border-psc-yellow focus:outline-none w-full text-center truncate';
                 if(state.activeFilterCSS === f.css) btn.classList.add('active');
@@ -490,7 +493,6 @@
             showToast('Filter telah dihapus.', 'info');
         });
 
-        // UI Controls (Frame, Text, Watermark) Updates
         document.querySelectorAll('.frame-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.frame-btn').forEach(b => {
@@ -515,16 +517,52 @@
             requestAnimationFrame(render);
         });
 
+        // ------------------ NEW TEXT EVENT LISTENERS ------------------
         ['date', 'year', 'location'].forEach(id => {
             document.getElementById(`text-${id}`).addEventListener('input', (e) => {
                 state[`text${id.charAt(0).toUpperCase() + id.slice(1)}`] = e.target.value;
                 requestAnimationFrame(render);
             });
         });
+
+        // Text Alignment Style
+        document.querySelectorAll('.text-align-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.text-align-btn').forEach(b => {
+                    b.classList.remove('border-psc-yellow', 'text-psc-yellow');
+                    b.classList.add('border-gray-700', 'text-gray-400');
+                });
+                const target = e.currentTarget;
+                target.classList.remove('border-gray-700', 'text-gray-400');
+                target.classList.add('border-psc-yellow', 'text-psc-yellow');
+                state.textAlign = target.getAttribute('data-align');
+                requestAnimationFrame(render);
+            });
+        });
+
+        // Text Position & Size Sliders
+        document.getElementById('text-size').addEventListener('input', (e) => {
+            state.textSize = parseFloat(e.target.value);
+            document.getElementById('val-text-size').textContent = state.textSize.toFixed(1) + 'x';
+            requestAnimationFrame(render);
+        });
+        document.getElementById('text-pos-y').addEventListener('input', (e) => {
+            state.textOffsetY = parseInt(e.target.value);
+            document.getElementById('val-text-y').textContent = (state.textOffsetY > 0 ? '+' : '') + state.textOffsetY + '%';
+            requestAnimationFrame(render);
+        });
+        document.getElementById('text-pos-x').addEventListener('input', (e) => {
+            state.textOffsetX = parseInt(e.target.value);
+            document.getElementById('val-text-x').textContent = (state.textOffsetX > 0 ? '+' : '') + state.textOffsetX + '%';
+            requestAnimationFrame(render);
+        });
+
         document.getElementById('text-color').addEventListener('input', (e) => {
             state.textColor = e.target.value;
             requestAnimationFrame(render);
         });
+
+        // -------------------------------------------------------------
 
         document.getElementById('watermark-toggle').addEventListener('change', (e) => {
             state.showWatermark = e.target.checked;
@@ -542,7 +580,6 @@
             requestAnimationFrame(render);
         });
 
-        // Watermark File Upload
         document.getElementById('watermark-input').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -559,16 +596,14 @@
             reader.readAsDataURL(file);
         });
 
-        // --- STREAMING_CHUNK: Logika Kamera dan Upload Foto... ---
+        // --- STREAMING_CHUNK: Modul Kamera & Manajemen File Gambar... ---
 
-        // File Upload Main Image
         const uploadInput = document.getElementById('upload-input');
         document.getElementById('btn-upload-trigger').addEventListener('click', () => uploadInput.click());
         
         uploadInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            // Valdiasi Tipe
             if(!file.type.startsWith('image/')) {
                 showToast('Harap pilih file gambar yang valid.', 'error');
                 return;
@@ -586,8 +621,6 @@
                     state.originalWidth = img.width;
                     state.originalHeight = img.height;
                     document.getElementById('no-image-text').style.display = 'none';
-                    
-                    // Reset styling on container just in case camera changed it
                     canvas.style.display = 'block';
                     requestAnimationFrame(render);
                     showToast('Foto berhasil dimuat!', 'success');
@@ -599,7 +632,6 @@
             reader.readAsDataURL(file);
         }
 
-        // Camera Logic
         const videoElement = document.getElementById('camera-video');
         const camControls = document.getElementById('camera-controls');
         const camStatus = document.getElementById('cam-status');
@@ -609,13 +641,11 @@
         document.getElementById('btn-stop-cam').addEventListener('click', stopCamera);
         
         async function startCamera() {
-            // Memberikan feedback visual saat proses
             const originalText = btnStartCam.innerHTML;
             btnStartCam.innerHTML = '<span class="animate-pulse">Mengakses Kamera...</span>';
             btnStartCam.disabled = true;
 
             try {
-                // Gunakan ideal: environment agar tidak error jika tidak ada kamera belakang (terutama di PC)
                 const constraints = {
                     video: { 
                         facingMode: { ideal: 'environment' },
@@ -630,11 +660,9 @@
                 videoElement.srcObject = stream;
                 state.videoTrack = stream.getVideoTracks()[0];
                 
-                // Show Controls
                 camControls.classList.remove('hidden');
                 camStatus.classList.remove('hidden');
                 
-                // Sembunyikan canvas, tampilkan video memenuhi container
                 canvas.style.display = 'none';
                 videoElement.style.display = 'block';
                 videoElement.style.position = 'absolute';
@@ -645,7 +673,7 @@
                 
                 document.getElementById('preview-container').appendChild(videoElement);
                 document.getElementById('no-image-text').style.display = 'none';
-                interactionDiv.style.display = 'none'; // Sembunyikan interaksi drag saat kamera aktif
+                interactionDiv.style.display = 'none';
 
                 showToast('Kamera siap. Tekan tombol putih untuk memotret.', 'info');
                 
@@ -677,14 +705,12 @@
             
             if(state.image) {
                 canvas.style.display = 'block';
-                // Cek tab aktif untuk watermark
                 const isWmTab = !document.getElementById('tab-watermark').classList.contains('hidden');
                 if(state.showWatermark && isWmTab) interactionDiv.style.display = 'block';
             } else {
                 document.getElementById('no-image-text').style.display = 'block';
             }
             
-            // Reset zoom/exp css
             videoElement.style.transform = 'scale(1)';
             videoElement.style.filter = 'none';
             state.camZoom = 1;
@@ -696,7 +722,6 @@
             });
         }
 
-        // Camera Controls (Zoom & Exp)
         document.querySelectorAll('.cam-zoom-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -713,10 +738,7 @@
                             const step = (capabilities.zoom.max - capabilities.zoom.min) / 3;
                             const hwZoom = capabilities.zoom.min + (zoom - 1) * step;
                             state.videoTrack.applyConstraints({ advanced: [{ zoom: Math.min(hwZoom, capabilities.zoom.max) }] })
-                                .catch(err => {
-                                    console.warn("HW Zoom failed, using CSS fallback", err);
-                                    videoElement.style.transform = `scale(${zoom})`;
-                                });
+                                .catch(() => { videoElement.style.transform = `scale(${zoom})`; });
                         } else {
                             videoElement.style.transform = `scale(${zoom})`;
                         }
@@ -736,10 +758,7 @@
                     const capabilities = state.videoTrack.getCapabilities();
                     if (capabilities && capabilities.exposureCompensation) {
                         state.videoTrack.applyConstraints({ advanced: [{ exposureCompensation: exp }] })
-                            .catch(err => {
-                                console.warn("HW Exp failed, using CSS fallback");
-                                videoElement.style.filter = `brightness(${1 + (exp * 0.3)})`;
-                            });
+                            .catch(() => { videoElement.style.filter = `brightness(${1 + (exp * 0.3)})`; });
                     } else {
                         videoElement.style.filter = `brightness(${1 + (exp * 0.3)})`;
                     }
@@ -749,11 +768,9 @@
             }
         });
 
-        // Capture Logic
         document.getElementById('btn-capture').addEventListener('click', () => {
             if(!videoElement.videoWidth) return;
             
-            // Efek Flash
             const flash = document.createElement('div');
             flash.className = 'absolute inset-0 bg-white z-50 pointer-events-none transition-opacity duration-300';
             document.getElementById('preview-container').appendChild(flash);
@@ -769,7 +786,6 @@
             tempCanvas.height = vh;
             const tCtx = tempCanvas.getContext('2d', { alpha: false });
             
-            // Cek capabilities jika bisa untuk tahu fallback zoom perlu digambar crop
             let needsSoftwareCrop = zoom > 1;
             let needsSoftwareBright = state.camExposure !== 0;
             
@@ -810,7 +826,7 @@
         });
 
 
-        // --- STREAMING_CHUNK: Mesin Render Utama & Logika Interaksi... ---
+        // --- STREAMING_CHUNK: Proses Render Ulang dengan Teks Leluasa... ---
 
         function render() {
             if (!state.image) return;
@@ -860,24 +876,54 @@
             ctx.drawImage(state.image, padL, padT, state.originalWidth, state.originalHeight);
             ctx.restore();
 
-            // 4. Draw Text
+            // 4. Draw Text (FLEXIBLE POSITIONING)
             if (state.frameType !== 'none' && state.frameType !== 'borderless') {
                 ctx.fillStyle = state.textColor;
-                // Skala font dinamis sesuai resolusi akhir
-                const fontSize = Math.max(canvas.width * 0.015, 20);
+                
+                // Menghitung Base Font Size dan dikalikan dengan slider ukuran (scale)
+                const baseFontSize = Math.max(canvas.width * 0.015, 12);
+                const fontSize = baseFontSize * state.textSize;
+                
                 ctx.font = `bold ${fontSize}px "Courier New", Courier, monospace`;
-                ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
                 
-                const textY = canvas.height - (padB / 2);
-                const textX = padL;
+                // Menghitung Posisi Y (Default berada di tengah border bawah)
+                const defaultY = canvas.height - (padB / 2);
+                // Tambahan pergeseran Y berdasarkan slider (persentase dari tinggi keseluruhan)
+                const textY = defaultY + (canvas.height * (state.textOffsetY / 100));
 
-                let dateStr = state.textDate + (state.textDate && state.textYear ? ' ' : '') + state.textYear;
-                if(dateStr) ctx.fillText(dateStr, textX, textY);
-                
-                if (state.textLocation) {
-                    ctx.textAlign = 'right';
-                    ctx.fillText(state.textLocation, canvas.width - padR, textY);
+                const dateStr = [state.textDate, state.textYear].filter(Boolean).join(' ');
+                const locStr = state.textLocation;
+
+                // Mode Pemisahan Kiri Kanan (Classic Split)
+                if (state.textAlign === 'split') {
+                    // Tambahan pergeseran X pada base margin L & R
+                    const leftX = padL + (canvas.width * (state.textOffsetX / 100));
+                    const rightX = canvas.width - padR + (canvas.width * (state.textOffsetX / 100));
+
+                    if (dateStr) {
+                        ctx.textAlign = 'left';
+                        ctx.fillText(dateStr, leftX, textY);
+                    }
+                    if (locStr) {
+                        ctx.textAlign = 'right';
+                        ctx.fillText(locStr, rightX, textY);
+                    }
+                } 
+                // Mode Menyatukan Teks (Kiri, Tengah, Kanan)
+                else {
+                    const combinedText = [dateStr, locStr].filter(Boolean).join(dateStr && locStr ? ' • ' : '');
+                    if (combinedText) {
+                        ctx.textAlign = state.textAlign; // 'left', 'center', 'right'
+                        
+                        let basePosX;
+                        if(state.textAlign === 'left') basePosX = padL;
+                        else if(state.textAlign === 'right') basePosX = canvas.width - padR;
+                        else basePosX = canvas.width / 2;
+
+                        const textX = basePosX + (canvas.width * (state.textOffsetX / 100));
+                        ctx.fillText(combinedText, textX, textY);
+                    }
                 }
             }
 
@@ -912,7 +958,6 @@
                 clientY = e.touches[0].clientY;
             }
             
-            // Map from CSS screen size (object-fit: contain) to actual canvas pixels
             const canvasRatio = canvas.width / canvas.height;
             const containerRatio = rect.width / rect.height;
             
@@ -936,7 +981,6 @@
         }
 
         function handleDragStart(e) {
-            // Hanya cegah default jika ini touch, untuk click biarkan agar elemen lain tidak rusak
             if(e.type === 'touchstart') e.preventDefault(); 
             state.isDraggingWatermark = true;
             updateWatermarkPos(e);
@@ -944,7 +988,7 @@
 
         function updateWatermarkPos(e) {
             if (!state.isDraggingWatermark || !state.image || !state.showWatermark) return;
-            if(e.type === 'touchmove') e.preventDefault(); // Mencegah scrolling saat drag
+            if(e.type === 'touchmove') e.preventDefault(); 
 
             const pos = getPointerPos(e);
             
@@ -955,7 +999,6 @@
             const maxX = Math.max(1, canvas.width - wmWidth);
             const maxY = Math.max(1, canvas.height - wmHeight);
             
-            // Posisi tengah pointer di logo
             let newX = (pos.x - (wmWidth/2)) / maxX;
             let newY = (pos.y - (wmHeight/2)) / maxY;
             
@@ -970,24 +1013,20 @@
         interactionDiv.addEventListener('mousemove', updateWatermarkPos);
         window.addEventListener('mouseup', () => { state.isDraggingWatermark = false; });
         
-        // Touch events dengan passive: false agar bisa preventDefault
         interactionDiv.addEventListener('touchstart', handleDragStart, {passive: false});
         interactionDiv.addEventListener('touchmove', updateWatermarkPos, {passive: false});
         window.addEventListener('touchend', () => { state.isDraggingWatermark = false; });
         window.addEventListener('touchcancel', () => { state.isDraggingWatermark = false; });
 
-        // --- STREAMING_CHUNK: Fungsi Download Akhir ---
-        
+        // --- STREAMING_CHUNK: Fitur Unduh Foto... ---
         document.getElementById('btn-download').addEventListener('click', () => {
             if (!state.image) {
                 showToast("Silakan upload foto atau ambil gambar dari kamera terlebih dahulu.", 'warning');
                 return;
             }
 
-            // Memastikan render terakhir sempurna
             render();
             
-            // Proses download menggunakan Blob untuk mencegah crash memori pada HP jika res tinggi
             canvas.toBlob((blob) => {
                 if(!blob) {
                     showToast("Gagal memproses gambar untuk diunduh.", 'error');
@@ -1011,10 +1050,9 @@
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
                 }, 200);
-            }, 'image/jpeg', 0.95); // Kualitas 95% 
+            }, 'image/jpeg', 0.95);
         });
 
-        // Resize observer untuk render ulang agar tidak terlihat blur saat orientasi hp berubah
         window.addEventListener('resize', () => {
             if (state.image) requestAnimationFrame(render);
         });
