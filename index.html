@@ -2,1052 +2,1349 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Photo Style Collection</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap');
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #111;
-            color: #f3f4f6;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-        }
-        
-        .accent-color {
-            color: #FFD700; /* Kuning aksen */
-        }
-        .bg-accent {
-            background-color: #FFD700;
-        }
-        .border-accent {
-            border-color: #FFD700;
+            background-color: #0f1115; /* Dark background */
+            color: #f3f4f6; /* Light text */
+            touch-action: pan-y; /* Allow vertical scrolling, prevent pinch zoom on layout */
         }
 
-        /* Typewriter font for stamps */
         .typewriter-font {
             font-family: 'Courier Prime', monospace;
         }
 
-        /* Container for the main editing area to keep it responsive */
-        .editor-container {
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - 64px); /* Subtract header height roughly */
+        /* Custom Scrollbar for filter lists */
+        .filter-scroll::-webkit-scrollbar {
+            height: 6px;
         }
-
-        @media (min-width: 768px) {
-            .editor-container {
-                flex-direction: row;
-            }
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #222; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #555; 
+        .filter-scroll::-webkit-scrollbar-track {
+            background: #1f2937;
             border-radius: 4px;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #FFD700; 
+        .filter-scroll::-webkit-scrollbar-thumb {
+            background: #eab308; /* Yellow accent */
+            border-radius: 4px;
         }
 
-        /* The canvas wrapper needs to be absolute relative to its container to handle aspect ratios properly without stretching */
-        #canvas-wrapper {
-            position: relative;
-            display: inline-block;
-            transition: all 0.3s ease;
-        }
-
-        /* Frame Styles applied via classes */
-        .frame-polaroid-1 { padding: 5% 5% 15% 5%; background-color: white; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-        .frame-polaroid-2 { padding: 4% 4% 18% 4%; background-color: #fdfdfd; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-        .frame-polaroid-3 { padding: 6% 6% 12% 6%; background-color: #f4f4f4; border: 1px solid #ddd; }
-        .frame-polaroid-4 { padding: 3% 3% 20% 3%; background-color: #fffaf0; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
-        .frame-polaroid-5 { padding: 8% 8% 18% 8%; background-color: #fafafa; border-radius: 2px; }
-        .frame-polaroid-6 { padding: 2% 2% 25% 2%; background-color: white; box-shadow: 2px 2px 5px rgba(0,0,0,0.2); }
-
-        /* Hide elements by default */
-        .hidden { display: none !important; }
-        
-        /* Video element for camera */
+        /* Video element for camera preview */
         #camera-preview {
+            object-fit: cover; /* Ensure no frame/black bars */
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Important for no-frame look on preview */
             background-color: #000;
         }
 
-        .filter-btn {
+        /* Main canvas where we draw the final image */
+        #main-canvas {
+            max-width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+            border-radius: 0.25rem;
+            display: none; /* Hidden until an image is loaded */
+            touch-action: none; /* Required for moving watermark on canvas */
+        }
+        
+        #preview-container {
+            position: relative;
+            display: inline-block; /* Wrap tightly around canvas */
+            max-width: 100%;
+        }
+
+        .btn-primary {
+            background-color: #eab308; /* Yellow */
+            color: #000;
             transition: all 0.2s;
         }
-        .filter-btn.active {
-            background-color: #FFD700;
+        .btn-primary:hover {
+            background-color: #facc15;
+            transform: scale(1.02);
+        }
+        .btn-secondary {
+            background-color: #374151; /* Dark gray */
+            color: #fff;
+            border: 1px solid #4b5563;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        .btn-active {
+            background-color: #eab308;
             color: #000;
-            border-color: #FFD700;
+            border-color: #eab308;
+        }
+
+        /* Range slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #eab308;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #4b5563;
+            border-radius: 2px;
+        }
+
+        /* Filter button styling */
+        .filter-btn {
+            min-width: 80px;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #1f2937;
+            border: 2px solid transparent;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            overflow: hidden;
+            position: relative;
+            padding: 0.25rem;
+        }
+        .filter-btn.active {
+            border-color: #eab308;
+        }
+        .filter-btn span {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 4px;
+            color: #d1d5db;
+            z-index: 10;
+        }
+        /* Pseudo-element for preview thumbnail */
+        .filter-btn-preview {
+            width: 100%;
+            height: 40px;
+            background-color: #4b5563;
+            border-radius: 0.25rem;
+            background-size: cover;
+            background-position: center;
+            /* The specific filter CSS will be applied via inline styles in JS */
         }
         
-        /* Specific CSS Filters for preview */
-        /* These will be applied via canvas 2d context for the final save, but CSS is used for fast preview if possible, though for complex stuff we'll do it all on canvas */
+        /* Modal for camera */
+        #camera-modal {
+            display: none;
+        }
+        #camera-modal.show {
+            display: flex;
+        }
     </style>
 </head>
-<body class="flex flex-col h-screen">
+<body class="min-h-screen flex flex-col">
 
     <!-- Header -->
-    <header class="bg-black border-b border-gray-800 p-4 flex justify-between items-center z-10 shrink-0">
-        <div class="flex items-center gap-3">
-            <!-- Default Logo provided by user -->
-            <img id="app-logo" src="LOGO SERRUM ART HANDLING PNG a.png" alt="Logo" class="h-8 w-auto object-contain bg-white rounded p-1" onerror="this.src='https://placehold.co/100x40/ffffff/000000?text=LOGO'">
-            <h1 class="text-xl font-bold uppercase tracking-wider hidden sm:block">Photo <span class="accent-color">Style</span> Collection</h1>
-            
-            <label class="cursor-pointer ml-4 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 py-1 px-2 rounded border border-gray-600 transition">
-                Ganti Logo
-                <input type="file" id="logo-upload" accept="image/*" class="hidden">
-            </label>
+    <header class="bg-black text-white p-4 flex justify-between items-center border-b border-gray-800 sticky top-0 z-50">
+        <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+            <h1 class="font-bold text-lg tracking-wide uppercase">Photo Style<span class="text-yellow-500">Collection</span></h1>
         </div>
-        <div class="flex gap-2">
-            <button id="btn-camera-mode" class="bg-gray-800 hover:bg-gray-700 text-white py-2 px-4 rounded border border-gray-600 transition flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2z"/><path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
-                <span class="hidden sm:inline">Kamera</span>
-            </button>
-            <label id="btn-upload-mode" class="bg-gray-800 hover:bg-gray-700 text-white py-2 px-4 rounded border border-gray-600 transition cursor-pointer flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
-                <span class="hidden sm:inline">Upload Foto</span>
-                <input type="file" id="image-upload" accept="image/*" class="hidden">
-            </label>
-            <button id="btn-download" class="bg-accent hover:bg-yellow-500 text-black font-bold py-2 px-4 rounded transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2zm2.354 6.854-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 1 1 .708-.708L7.5 9.293V5.5a.5.5 0 0 1 1 0v3.793l1.146-1.147a.5.5 0 0 1 .708.708z"/></svg>
-                <span class="hidden sm:inline">Simpan (HD)</span>
-            </button>
-        </div>
+        <button id="btn-download" class="btn-primary px-4 py-2 rounded-md font-semibold text-sm shadow-md flex items-center gap-2 hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Simpan Resolusi Tinggi
+        </button>
     </header>
 
-    <!-- Main Editor Area -->
-    <main class="editor-container grow bg-zinc-950">
+    <!-- Main Content Area -->
+    <main class="flex-grow flex flex-col md:flex-row overflow-hidden relative">
         
-        <!-- Camera View Area (Hidden by default) -->
-        <section id="camera-section" class="w-full h-full flex flex-col hidden relative bg-black">
-            <div class="relative grow overflow-hidden flex items-center justify-center">
-                <video id="camera-preview" autoplay playsinline></video>
-                <!-- Camera Controls Overlay -->
-                <div class="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-6 z-20 px-4">
-                    <!-- Zoom Controls -->
-                    <div class="flex bg-black/50 rounded-full backdrop-blur p-1">
-                        <button class="zoom-btn px-3 py-1 text-sm text-white hover:text-yellow-400" data-zoom="1">1x</button>
-                        <button class="zoom-btn px-3 py-1 text-sm text-white hover:text-yellow-400" data-zoom="2">2x</button>
-                        <button class="zoom-btn px-3 py-1 text-sm text-white hover:text-yellow-400" data-zoom="3">3x</button>
-                    </div>
-                    <!-- Capture Button -->
-                    <button id="btn-capture" class="w-16 h-16 rounded-full border-4 border-white bg-transparent hover:bg-white/20 transition"></button>
-                    <!-- Close Camera -->
-                    <button id="btn-close-camera" class="w-10 h-10 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+        <!-- Left/Top Panel: Image Preview Area -->
+        <div class="flex-grow bg-gray-900 flex flex-col items-center justify-center p-4 relative overflow-hidden h-[50vh] md:h-auto min-h-[300px]" id="workspace-area">
+            
+            <!-- Empty State UI -->
+            <div id="empty-state" class="text-center flex flex-col items-center justify-center h-full w-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mb-4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <p class="text-gray-400 mb-6">Mulai dengan mengambil foto atau memilih dari galeri.</p>
+                <div class="flex gap-4 flex-wrap justify-center">
+                    <button id="btn-open-camera" class="btn-primary px-6 py-3 rounded-full font-semibold shadow-lg flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                        Buka Kamera
                     </button>
-                </div>
-                <!-- Exposure Slider Overlay (Simulated via filter on video element if native not supported) -->
-                <div class="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-20 bg-black/50 p-2 rounded-full backdrop-blur">
-                    <span class="text-xs text-white">Brt</span>
-                    <input type="range" id="cam-exposure" min="-1" max="1" step="0.1" value="0" class="h-24 w-1 bg-gray-600 rounded-lg appearance-none cursor-pointer" style="writing-mode: bt-lr; -webkit-appearance: slider-vertical;">
+                    <label class="btn-secondary px-6 py-3 rounded-full font-semibold shadow-lg flex items-center gap-2 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Upload Foto
+                        <input type="file" id="file-upload" accept="image/*" class="hidden">
+                    </label>
                 </div>
             </div>
-        </section>
 
-        <!-- Preview Area -->
-        <section id="preview-section" class="w-full md:w-2/3 h-full flex flex-col justify-center items-center p-4 bg-zinc-900 overflow-hidden relative">
-            <div id="no-image-text" class="text-gray-500 text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <p>Mulai dengan memilih "Kamera" atau "Upload Foto"</p>
-            </div>
-
-            <!-- The actual container we will render to canvas -->
-            <div id="export-container" class="hidden relative max-w-full max-h-full flex items-center justify-center">
-                <div id="canvas-wrapper" class="bg-white">
-                    <!-- The main image canvas where filters are applied -->
-                    <canvas id="main-canvas" class="block w-full h-auto" style="max-height: 70vh; object-fit: contain;"></canvas>
-                    
-                    <!-- Text Overlay container (positioned over the frame padding) -->
-                    <div id="text-overlay" class="absolute bottom-4 left-4 right-4 flex justify-between items-end pointer-events-none opacity-0 transition-opacity duration-300 z-10">
-                        <div class="flex flex-col gap-1 typewriter-font font-bold text-sm md:text-base leading-tight" id="overlay-text-content" style="color: #000;">
-                            <span id="display-date"></span>
-                            <span id="display-location"></span>
-                        </div>
-                    </div>
-                </div>
+            <!-- Canvas Container -->
+            <div id="preview-container">
+                <!-- Real Canvas for rendering (used for display and export) -->
+                <canvas id="main-canvas"></canvas>
             </div>
             
-            <!-- Hidden original image for processing -->
-            <img id="original-image" class="hidden" alt="original">
-        </section>
+            <!-- Loading Indicator -->
+            <div id="loading-indicator" class="absolute inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-40 hidden">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
+                <span class="ml-3 font-semibold text-yellow-500">Memproses...</span>
+            </div>
+        </div>
 
-        <!-- Controls Sidebar -->
-        <aside id="controls-section" class="w-full md:w-1/3 h-1/3 md:h-full bg-black border-t md:border-t-0 md:border-l border-gray-800 flex flex-col shrink-0">
+        <!-- Right/Bottom Panel: Controls -->
+        <div class="w-full md:w-80 lg:w-96 bg-black border-l border-gray-800 flex flex-col h-[50vh] md:h-auto z-10" id="controls-panel" style="display: none;">
             
             <!-- Tabs -->
-            <div class="flex border-b border-gray-800 shrink-0 overflow-x-auto custom-scrollbar">
-                <button class="tab-btn px-4 py-3 text-sm font-semibold text-gray-400 hover:text-white border-b-2 border-transparent active-tab whitespace-nowrap" data-target="tab-filters">Filters</button>
-                <button class="tab-btn px-4 py-3 text-sm font-semibold text-gray-400 hover:text-white border-b-2 border-transparent whitespace-nowrap" data-target="tab-frame">Frame</button>
-                <button class="tab-btn px-4 py-3 text-sm font-semibold text-gray-400 hover:text-white border-b-2 border-transparent whitespace-nowrap" data-target="tab-text">Teks & Info</button>
-                <button class="tab-btn px-4 py-3 text-sm font-semibold text-gray-400 hover:text-white border-b-2 border-transparent whitespace-nowrap" data-target="tab-adjust">Adjust</button>
+            <div class="flex border-b border-gray-800">
+                <button class="tab-btn flex-1 py-3 text-sm font-semibold text-gray-400 hover:text-white border-b-2 border-transparent" data-target="tab-filters">Filter</button>
+                <button class="tab-btn flex-1 py-3 text-sm font-semibold text-gray-400 hover:text-white border-b-2 border-transparent" data-target="tab-frame">Frame & Teks</button>
+                <button class="tab-btn flex-1 py-3 text-sm font-semibold text-gray-400 hover:text-white border-b-2 border-transparent" data-target="tab-watermark">Logo</button>
             </div>
 
-            <!-- Tab Contents -->
-            <div class="grow overflow-y-auto p-4 custom-scrollbar">
+            <!-- Tab Content Area -->
+            <div class="flex-grow overflow-y-auto p-4 custom-scrollbar">
                 
-                <!-- Filters Tab -->
-                <div id="tab-filters" class="tab-content block">
-                    <select id="filter-category-select" class="w-full bg-gray-900 border border-gray-700 text-white rounded p-2 mb-4 focus:outline-none focus:border-yellow-500">
-                        <option value="retro">10 Retro</option>
-                        <option value="vintage">10 Vintage</option>
-                        <option value="cinematic">10 Cinematic</option>
-                        <option value="filmstyle">10 Gaya Film</option>
-                        <option value="pro">10 Pro (Balanced DR)</option>
-                        <!-- Kamera Ternama -->
-                        <option value="cam-leica">Kamera: Leica Style (10)</option>
-                        <option value="cam-fuji">Kamera: Fujifilm Style (10)</option>
-                        <option value="cam-kodak">Kamera: Kodak Style (10)</option>
-                        <option value="cam-canon">Kamera: Canon Colors (10)</option>
-                        <option value="cam-sony">Kamera: Sony Look (10)</option>
-                    </select>
-
-                    <div id="filter-grid" class="grid grid-cols-3 gap-2">
-                        <!-- Filters injected via JS -->
-                    </div>
-                </div>
-
-                <!-- Frame Tab -->
-                <div id="tab-frame" class="tab-content hidden space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-2 text-gray-300">Jenis Frame Polaroid</label>
-                        <div class="grid grid-cols-3 gap-2">
-                            <button class="frame-btn filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs active" data-frame="none">Tanpa Frame</button>
-                            <button class="frame-btn filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs" data-frame="frame-polaroid-1">Classic</button>
-                            <button class="frame-btn filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs" data-frame="frame-polaroid-2">Modern Soft</button>
-                            <button class="frame-btn filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs" data-frame="frame-polaroid-3">Thin Border</button>
-                            <button class="frame-btn filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs" data-frame="frame-polaroid-4">Vintage Deep</button>
-                            <button class="frame-btn filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs" data-frame="frame-polaroid-5">Minimalist</button>
-                            <button class="frame-btn filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs" data-frame="frame-polaroid-6">Wide Bottom</button>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2 text-gray-300">Ketebalan Frame (Padding %)</label>
-                        <input type="range" id="frame-thickness" min="0" max="20" value="0" class="w-full accent-yellow-500">
-                        <span id="thickness-val" class="text-xs text-gray-400">Default (Berdasarkan Jenis)</span>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2 text-gray-300">Warna Frame</label>
-                        <div class="flex items-center gap-2">
-                            <input type="color" id="frame-color" value="#ffffff" class="h-8 w-8 rounded border-0 bg-transparent cursor-pointer">
-                            <button id="reset-frame-color" class="text-xs text-gray-400 hover:text-white underline">Reset ke Putih</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Text Tab -->
-                <div id="tab-text" class="tab-content hidden space-y-4">
-                    <div class="flex items-center justify-between">
-                        <label class="text-sm font-medium text-gray-300">Tampilkan Info</label>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" id="toggle-text" class="sr-only peer">
-                          <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-yellow-500"></div>
-                        </label>
-                    </div>
+                <!-- FILTER TAB -->
+                <div id="tab-filters" class="tab-content">
+                    <button id="btn-reset-filter" class="w-full mb-4 py-2 btn-secondary rounded text-sm">Hapus Semua Filter</button>
                     
-                    <div id="text-controls" class="space-y-4 opacity-50 pointer-events-none transition-opacity">
-                        <div>
-                            <label class="block text-xs mb-1 text-gray-400">Format Tanggal/Tahun</label>
-                            <input type="text" id="input-date" placeholder="Contoh: '98 MAY 24" class="w-full bg-gray-900 border border-gray-700 text-white rounded p-2 text-sm focus:border-yellow-500 outline-none typewriter-font">
+                    <!-- Filter Categories Container (populated by JS) -->
+                    <div id="filter-categories-container"></div>
+                </div>
+
+                <!-- FRAME & TEXT TAB -->
+                <div id="tab-frame" class="tab-content hidden space-y-6">
+                    <!-- Frame Section -->
+                    <div>
+                        <h3 class="text-yellow-500 font-semibold mb-3 text-sm uppercase tracking-wider">Jenis Frame Polaroid</h3>
+                        <div class="grid grid-cols-3 gap-2 mb-3">
+                            <button class="frame-btn btn-secondary py-2 rounded text-xs" data-frame="none">Tanpa Frame</button>
+                            <button class="frame-btn btn-secondary py-2 rounded text-xs" data-frame="classic">Classic White</button>
+                            <button class="frame-btn btn-secondary py-2 rounded text-xs" data-frame="dark">Dark Mode</button>
+                            <button class="frame-btn btn-secondary py-2 rounded text-xs" data-frame="vintage">Vintage Cream</button>
+                            <button class="frame-btn btn-secondary py-2 rounded text-xs" data-frame="thin">Thin Border</button>
+                            <button class="frame-btn btn-secondary py-2 rounded text-xs" data-frame="square">Square Instax</button>
+                            <button class="frame-btn btn-secondary py-2 rounded text-xs" data-frame="custom">Custom Color</button>
                         </div>
-                        <div>
-                            <label class="block text-xs mb-1 text-gray-400">Lokasi / Keterangan</label>
-                            <input type="text" id="input-location" placeholder="JAKARTA, IND" class="w-full bg-gray-900 border border-gray-700 text-white rounded p-2 text-sm focus:border-yellow-500 outline-none typewriter-font">
+                        
+                        <div id="custom-frame-controls" class="hidden space-y-3 bg-gray-800 p-3 rounded-md">
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Warna Frame</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="frame-color" value="#ffffff" class="w-8 h-8 rounded cursor-pointer bg-transparent border-0 p-0">
+                                    <span id="frame-color-val" class="text-xs text-gray-300">#ffffff</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="flex justify-between text-xs text-gray-400 mb-1">
+                                    <span>Ketebalan Frame</span>
+                                    <span id="frame-thickness-val">10%</span>
+                                </label>
+                                <input type="range" id="frame-thickness" min="0" max="25" value="10">
+                            </div>
+                            <div>
+                                <label class="flex justify-between text-xs text-gray-400 mb-1">
+                                    <span>Ruang Bawah (Caption)</span>
+                                    <span id="frame-bottom-val">20%</span>
+                                </label>
+                                <input type="range" id="frame-bottom" min="0" max="40" value="20">
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-xs mb-1 text-gray-400">Warna Teks</label>
-                            <div class="flex items-center gap-2">
-                                <input type="color" id="text-color" value="#000000" class="h-8 w-8 rounded border-0 bg-transparent cursor-pointer">
-                                <button id="reset-text-color" class="text-xs text-gray-400 hover:text-white underline">Reset Tinta Hitam</button>
-                                <button id="set-text-orange" class="text-xs text-orange-500 hover:text-orange-400 underline">Tinta Oranye Khas</button>
+                    </div>
+
+                    <hr class="border-gray-800">
+
+                    <!-- Text/Stamp Section -->
+                    <div>
+                        <h3 class="text-yellow-500 font-semibold mb-3 text-sm uppercase tracking-wider">Stempel Teks (Mesin Ketik)</h3>
+                        
+                        <div class="flex items-center justify-between mb-3">
+                            <label class="text-sm text-gray-300">Aktifkan Teks</label>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                              <input type="checkbox" id="toggle-text" class="sr-only peer" checked>
+                              <div class="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-yellow-500"></div>
+                            </label>
+                        </div>
+
+                        <div id="text-controls" class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Teks Utama (Lokasi/Judul)</label>
+                                <input type="text" id="text-main" value="TOKYO, JAPAN" class="w-full bg-gray-800 text-white text-sm rounded p-2 border border-gray-700 focus:border-yellow-500 outline-none typewriter-font">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Teks Sekunder (Tanggal)</label>
+                                <input type="text" id="text-sub" value="" class="w-full bg-gray-800 text-white text-sm rounded p-2 border border-gray-700 focus:border-yellow-500 outline-none typewriter-font" placeholder="Otomatis hari ini">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Warna Teks</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="text-color" value="#eab308" class="w-8 h-8 rounded cursor-pointer bg-transparent border-0 p-0">
+                                    <span class="text-xs text-gray-300">Pilih Warna</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="flex justify-between text-xs text-gray-400 mb-1">
+                                    <span>Posisi (Vertical)</span>
+                                </label>
+                                <input type="range" id="text-pos-y" min="0" max="100" value="95">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Adjust Tab -->
-                <div id="tab-adjust" class="tab-content hidden space-y-4">
-                    <p class="text-xs text-gray-400 mb-2">Penyesuaian manual (menimpa pengaturan filter jika diubah)</p>
-                    
-                    <div class="space-y-3">
-                        <div class="flex flex-col">
-                            <div class="flex justify-between text-xs mb-1"><span>Brightness</span><span id="val-brightness">100%</span></div>
-                            <input type="range" id="adj-brightness" min="0" max="200" value="100" class="w-full accent-yellow-500" data-filter="brightness">
+                <!-- WATERMARK TAB -->
+                <div id="tab-watermark" class="tab-content hidden space-y-4">
+                    <div class="bg-gray-800 p-3 rounded-md text-sm text-gray-300 mb-2">
+                        <p>Tambahkan logo. Sentuh/klik dan seret logo pada gambar untuk memindahkannya.</p>
+                    </div>
+
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm text-gray-300">Tampilkan Logo</label>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" id="toggle-watermark" class="sr-only peer" checked>
+                          <div class="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-yellow-500"></div>
+                        </label>
+                    </div>
+
+                    <div id="watermark-controls">
+                        <label class="btn-secondary w-full py-2 rounded font-semibold flex items-center justify-center gap-2 cursor-pointer mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            Ganti Logo Custom
+                            <input type="file" id="watermark-upload" accept="image/png, image/jpeg, image/svg+xml" class="hidden">
+                        </label>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="flex justify-between text-xs text-gray-400 mb-1">
+                                    <span>Ukuran Logo</span>
+                                    <span id="wm-scale-val">20%</span>
+                                </label>
+                                <input type="range" id="wm-scale" min="5" max="100" value="20">
+                            </div>
+                            <div>
+                                <label class="flex justify-between text-xs text-gray-400 mb-1">
+                                    <span>Transparansi (Opacity)</span>
+                                    <span id="wm-opacity-val">80%</span>
+                                </label>
+                                <input type="range" id="wm-opacity" min="0" max="100" value="80">
+                            </div>
+                            <div class="text-xs text-gray-500 text-center italic mt-4">
+                                Hint: Drag logo pada canvas untuk mengatur posisi.
+                            </div>
+                            <button id="btn-reset-wm-pos" class="w-full mt-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs text-gray-300">Reset Posisi Logo</button>
                         </div>
-                        <div class="flex flex-col">
-                            <div class="flex justify-between text-xs mb-1"><span>Contrast</span><span id="val-contrast">100%</span></div>
-                            <input type="range" id="adj-contrast" min="0" max="200" value="100" class="w-full accent-yellow-500" data-filter="contrast">
-                        </div>
-                        <div class="flex flex-col">
-                            <div class="flex justify-between text-xs mb-1"><span>Saturation</span><span id="val-saturate">100%</span></div>
-                            <input type="range" id="adj-saturate" min="0" max="200" value="100" class="w-full accent-yellow-500" data-filter="saturate">
-                        </div>
-                        <div class="flex flex-col">
-                            <div class="flex justify-between text-xs mb-1"><span>Sepia</span><span id="val-sepia">0%</span></div>
-                            <input type="range" id="adj-sepia" min="0" max="100" value="0" class="w-full accent-yellow-500" data-filter="sepia">
-                        </div>
-                        <div class="flex flex-col">
-                            <div class="flex justify-between text-xs mb-1"><span>Hue Rotate</span><span id="val-hue-rotate">0deg</span></div>
-                            <input type="range" id="adj-hue-rotate" min="-180" max="180" value="0" class="w-full accent-yellow-500" data-filter="hue-rotate" data-suffix="deg">
-                        </div>
-                        <div class="flex flex-col">
-                            <div class="flex justify-between text-xs mb-1"><span>Blur (Softness)</span><span id="val-blur">0px</span></div>
-                            <input type="range" id="adj-blur" min="0" max="10" step="0.1" value="0" class="w-full accent-yellow-500" data-filter="blur" data-suffix="px">
-                        </div>
-                        <button id="btn-reset-adjust" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2 rounded text-sm mt-4 border border-gray-700">Reset Adjustments</button>
                     </div>
                 </div>
 
             </div>
-        </aside>
+            
+            <!-- Bottom action buttons (mobile only) -->
+            <div class="p-4 border-t border-gray-800 flex gap-2 md:hidden">
+                 <button id="btn-new-image-mobile" class="btn-secondary flex-1 py-2 rounded text-sm">Ganti Foto</button>
+                 <button id="btn-download-mobile" class="btn-primary flex-1 py-2 rounded text-sm font-bold">Simpan</button>
+            </div>
+        </div>
     </main>
 
-    <!-- Modal Message Box -->
-    <div id="message-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center hidden backdrop-blur-sm">
-        <div class="bg-gray-900 border border-gray-700 p-6 rounded-lg max-w-sm w-full mx-4 shadow-2xl">
-            <h3 id="modal-title" class="text-lg font-bold text-white mb-2">Informasi</h3>
-            <p id="modal-message" class="text-gray-300 mb-6 text-sm"></p>
-            <div class="flex justify-end">
-                <button id="modal-close" class="bg-accent text-black px-4 py-2 rounded font-semibold hover:bg-yellow-500 transition">Tutup</button>
+    <!-- Camera Modal (Full Screen) -->
+    <div id="camera-modal" class="fixed inset-0 bg-black z-[100] flex-col hidden">
+        <!-- Camera Top Bar -->
+        <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10 bg-gradient-to-b from-black/80 to-transparent">
+            <button id="btn-close-camera" class="text-white bg-black/50 p-2 rounded-full hover:bg-black">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <div class="text-yellow-500 text-sm font-semibold tracking-widest"><span class="w-2 h-2 bg-red-500 rounded-full inline-block animate-pulse mr-2"></span>REC / PHOTO</div>
+            <button id="btn-switch-camera" class="text-white bg-black/50 p-2 rounded-full hover:bg-black">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"/><path d="M9 22V12h6v10"/><path d="M2 10.6L12 2l10 8.6"/></svg> <!-- Using icon as substitute for flip -->
+                <!-- Replace with refresh icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="absolute inset-0 m-auto" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="background:rgba(0,0,0,0.8);"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </button>
+        </div>
+
+        <!-- Camera Preview Container -->
+        <div class="flex-grow relative overflow-hidden bg-black flex items-center justify-center">
+            <video id="camera-preview" autoplay playsinline></video>
+            
+            <!-- Grid overlay -->
+            <div class="absolute inset-0 pointer-events-none opacity-30">
+                <div class="w-full h-full flex flex-col justify-between">
+                    <div class="border-b border-white flex-1"></div>
+                    <div class="border-b border-white flex-1"></div>
+                    <div class="flex-1"></div>
+                </div>
+                <div class="absolute inset-0 flex justify-between">
+                    <div class="border-r border-white flex-1"></div>
+                    <div class="border-r border-white flex-1"></div>
+                    <div class="flex-1"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Camera Bottom Controls -->
+        <div class="bg-black pb-8 pt-4 px-4 flex flex-col items-center gap-4 relative z-10 border-t border-gray-900">
+            <!-- Advanced Camera Controls (Zoom) -->
+            <div class="flex justify-center w-full max-w-md gap-4 mb-2">
+                <div class="bg-gray-900 rounded-full px-3 py-1 flex items-center gap-2">
+                     <span class="text-xs text-gray-400">Lensa:</span>
+                     <button class="lens-btn text-xs font-bold text-white px-2 py-1 rounded bg-gray-700 data-zoom="1">1x</button>
+                     <button class="lens-btn text-xs font-bold text-gray-400 px-2 py-1 rounded hover:bg-gray-800" data-zoom="2">2x</button>
+                     <button class="lens-btn text-xs font-bold text-gray-400 px-2 py-1 rounded hover:bg-gray-800" data-zoom="3">3x</button>
+                </div>
+                <!-- Manual zoom slider if supported -->
+                <div class="flex-grow flex items-center gap-2 hidden" id="zoom-slider-container">
+                    <span class="text-xs text-gray-400">Zoom</span>
+                    <input type="range" id="cam-zoom" min="1" max="5" step="0.1" value="1" class="w-full">
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center w-full max-w-md px-6">
+                <!-- Empty div for balance -->
+                <div class="w-12 h-12"></div>
+                
+                <!-- Capture Button -->
+                <button id="btn-capture" class="w-20 h-20 rounded-full border-4 border-gray-300 p-1 flex items-center justify-center active:scale-95 transition-transform group">
+                    <div class="w-full h-full bg-white rounded-full group-hover:bg-gray-200 group-active:bg-yellow-500 transition-colors"></div>
+                </button>
+                
+                <!-- Empty div for balance -->
+                <div class="w-12 h-12"></div>
+            </div>
+            <div class="text-xs text-gray-500 mt-2 text-center max-w-xs">
+                (Note: Fitur zoom optikal bergantung pada dukungan hardware dan browser perangkat).
             </div>
         </div>
     </div>
 
     <script>
-        // --- Data & Definitions ---
-        
-        // Define 100 filters total (10 categories * 10 filters)
-        // We use standard CSS filters combined to create looks, plus color overlays applied via canvas later
-        const filterDefinitions = {
-            retro: [
-                { name: "Retro 1", css: "sepia(50%) contrast(120%) saturate(80%) hue-rotate(-10deg)" },
-                { name: "Retro 2", css: "sepia(30%) contrast(150%) saturate(60%) hue-rotate(15deg) brightness(90%)" },
-                { name: "Faded 80s", css: "saturate(40%) contrast(90%) brightness(110%) sepia(20%)" },
-                { name: "Neon Glow", css: "contrast(130%) saturate(150%) hue-rotate(-30deg) brightness(105%)" },
-                { name: "Warm Past", css: "sepia(40%) saturate(110%) contrast(110%) hue-rotate(-5deg)" },
-                { name: "Cool Retro", css: "saturate(70%) contrast(120%) hue-rotate(180deg) brightness(90%)" },
-                { name: "Grungy", css: "contrast(160%) saturate(50%) sepia(30%) brightness(85%)" },
-                { name: "Sepia Dream", css: "sepia(80%) contrast(110%) blur(0.5px)" },
-                { name: "Polaroid Old", css: "contrast(120%) saturate(70%) sepia(30%) hue-rotate(-10deg) brightness(110%)" },
-                { name: "Vaporwave", css: "saturate(200%) hue-rotate(270deg) contrast(110%)" }
-            ],
-            vintage: [
-                { name: "Vintage 1", css: "sepia(70%) contrast(110%) saturate(90%)" },
-                { name: "Old Paper", css: "sepia(90%) contrast(90%) brightness(110%)" },
-                { name: "Classic B&W", css: "grayscale(100%) contrast(130%)" },
-                { name: "Soft B&W", css: "grayscale(100%) contrast(90%) brightness(120%)" },
-                { name: "Tintype", css: "grayscale(100%) sepia(30%) contrast(150%) brightness(80%)" },
-                { name: "Faded Color", css: "saturate(30%) contrast(80%) brightness(120%)" },
-                { name: "Warm Vintage", css: "sepia(50%) saturate(80%) hue-rotate(-20deg) brightness(110%)" },
-                { name: "Cold Vintage", css: "sepia(20%) saturate(60%) hue-rotate(190deg) contrast(110%)" },
-                { name: "Antique", css: "sepia(100%) contrast(120%) saturate(50%) brightness(95%)" },
-                { name: "Dusty", css: "contrast(80%) saturate(50%) sepia(40%) brightness(110%)" }
-            ],
-            cinematic: [
-                { name: "Teal & Orange", css: "saturate(130%) contrast(110%) hue-rotate(-15deg)" }, // Simple approx
-                { name: "Moody Dark", css: "contrast(140%) brightness(75%) saturate(80%)" },
-                { name: "Cinematic Bright", css: "contrast(120%) brightness(115%) saturate(110%)" },
-                { name: "Action Movie", css: "contrast(150%) saturate(120%) hue-rotate(-10deg)" },
-                { name: "Sci-Fi Blue", css: "saturate(90%) contrast(130%) hue-rotate(200deg) brightness(90%)" },
-                { name: "Desaturated", css: "saturate(40%) contrast(130%)" },
-                { name: "Golden Hour", css: "sepia(30%) saturate(140%) contrast(110%) hue-rotate(-10deg)" },
-                { name: "Matrix Green", css: "hue-rotate(90deg) saturate(120%) contrast(140%) brightness(85%)" },
-                { name: "Horror", css: "contrast(160%) saturate(30%) brightness(70%) sepia(20%)" },
-                { name: "Epic", css: "contrast(125%) saturate(115%) brightness(105%)" }
-            ],
-            filmstyle: [
-                { name: "Kodachrome", css: "contrast(130%) saturate(120%) hue-rotate(-5deg)" },
-                { name: "Portra 400", css: "contrast(110%) saturate(110%) brightness(105%) sepia(10%)" },
-                { name: "Ilford HP5", css: "grayscale(100%) contrast(140%) brightness(95%)" },
-                { name: "Velvia", css: "saturate(150%) contrast(120%)" },
-                { name: "Agfa Vista", css: "saturate(130%) contrast(115%) hue-rotate(5deg)" },
-                { name: "Lomo", css: "contrast(150%) saturate(140%) brightness(90%)" },
-                { name: "Cross Process", css: "contrast(140%) saturate(120%) hue-rotate(45deg)" },
-                { name: "CineStill", css: "contrast(120%) saturate(110%) hue-rotate(-15deg) brightness(105%)" },
-                { name: "Ektar 100", css: "saturate(140%) contrast(125%)" },
-                { name: "Tri-X 400", css: "grayscale(100%) contrast(160%) brightness(90%)" }
-            ],
-            pro: [
-                { name: "Balanced", css: "contrast(105%) saturate(105%) brightness(102%)" },
-                { name: "HDR Look", css: "contrast(90%) saturate(110%) brightness(110%)" },
-                { name: "Crisp", css: "contrast(120%) saturate(105%) brightness(105%)" },
-                { name: "Soft Portrait", css: "contrast(95%) saturate(95%) brightness(105%) blur(0.2px)" },
-                { name: "Punchy", css: "contrast(130%) saturate(120%)" },
-                { name: "Neutral", css: "contrast(100%) saturate(100%) brightness(100%)" },
-                { name: "Cool Pro", css: "contrast(110%) saturate(105%) hue-rotate(185deg)" },
-                { name: "Warm Pro", css: "contrast(110%) saturate(105%) sepia(15%)" },
-                { name: "High Key", css: "brightness(130%) contrast(90%) saturate(90%)" },
-                { name: "Low Key", css: "brightness(60%) contrast(130%) saturate(110%)" }
-            ],
-            'cam-leica': [
-                { name: "M Monochrom", css: "grayscale(100%) contrast(145%) brightness(95%)" },
-                { name: "Leica Look", css: "contrast(125%) saturate(110%) sepia(5%)" },
-                { name: "Summilux", css: "contrast(115%) saturate(115%) brightness(105%)" },
-                { name: "Classic M", css: "contrast(120%) saturate(95%) sepia(10%)" },
-                { name: "Vivid L", css: "contrast(130%) saturate(135%)" },
-                { name: "Soft L", css: "contrast(95%) saturate(90%) brightness(110%)" },
-                { name: "Street B&W", css: "grayscale(100%) contrast(160%) brightness(85%)" },
-                { name: "Warm L", css: "contrast(110%) saturate(110%) hue-rotate(-10deg)" },
-                { name: "Cold L", css: "contrast(115%) saturate(105%) hue-rotate(190deg)" },
-                { name: "Noctilux", css: "contrast(110%) saturate(105%) brightness(115%) blur(0.3px)" }
-            ],
-            'cam-fuji': [
-                { name: "Classic Chrome", css: "contrast(120%) saturate(70%) sepia(15%)" },
-                { name: "Astia", css: "contrast(95%) saturate(115%) brightness(105%)" },
-                { name: "Provia", css: "contrast(110%) saturate(110%)" },
-                { name: "Velvia F", css: "contrast(130%) saturate(140%)" },
-                { name: "Acros", css: "grayscale(100%) contrast(130%) brightness(95%)" },
-                { name: "Pro Neg Hi", css: "contrast(125%) saturate(100%)" },
-                { name: "Pro Neg Std", css: "contrast(105%) saturate(90%)" },
-                { name: "Eterna", css: "contrast(85%) saturate(80%) brightness(110%)" },
-                { name: "Classic Neg", css: "contrast(130%) saturate(85%) hue-rotate(10deg)" },
-                { name: "Monochrome F", css: "grayscale(100%) contrast(110%)" }
-            ],
-            'cam-kodak': [
-                { name: "Gold 200", css: "contrast(110%) saturate(125%) sepia(15%) hue-rotate(-5deg)" },
-                { name: "ColorPlus", css: "contrast(105%) saturate(115%) sepia(20%)" },
-                { name: "Ultramax", css: "contrast(120%) saturate(130%) hue-rotate(5deg)" },
-                { name: "Ektachrome", css: "contrast(125%) saturate(120%) hue-rotate(10deg)" },
-                { name: "T-Max", css: "grayscale(100%) contrast(150%) brightness(105%)" },
-                { name: "Tri-X", css: "grayscale(100%) contrast(160%) brightness(90%)" },
-                { name: "Portra 160", css: "contrast(100%) saturate(105%) sepia(5%)" },
-                { name: "Portra 800", css: "contrast(115%) saturate(115%) sepia(10%) brightness(105%)" },
-                { name: "ProImage", css: "contrast(110%) saturate(110%) hue-rotate(-2deg)" },
-                { name: "Aerochrome", css: "hue-rotate(250deg) saturate(150%) contrast(120%)" } // False color approximation
-            ],
-            'cam-canon': [
-                { name: "Standard C", css: "contrast(110%) saturate(115%)" },
-                { name: "Portrait C", css: "contrast(95%) saturate(105%) brightness(105%)" },
-                { name: "Landscape C", css: "contrast(120%) saturate(130%) hue-rotate(5deg)" },
-                { name: "Fine Detail", css: "contrast(115%) saturate(110%)" },
-                { name: "Neutral C", css: "contrast(90%) saturate(90%)" },
-                { name: "Faithful", css: "contrast(100%) saturate(100%)" },
-                { name: "Monochrome C", css: "grayscale(100%) contrast(120%)" },
-                { name: "Vivid C", css: "contrast(125%) saturate(140%)" },
-                { name: "Warm C", css: "contrast(110%) saturate(115%) sepia(15%)" },
-                { name: "Cool C", css: "contrast(110%) saturate(115%) hue-rotate(190deg)" }
-            ],
-            'cam-sony': [
-                { name: "Standard S", css: "contrast(115%) saturate(110%) brightness(98%)" },
-                { name: "Vivid S", css: "contrast(130%) saturate(135%)" },
-                { name: "Neutral S", css: "contrast(95%) saturate(95%)" },
-                { name: "Clear", css: "contrast(120%) saturate(105%) brightness(105%)" },
-                { name: "Deep", css: "contrast(125%) saturate(120%) brightness(90%)" },
-                { name: "Light", css: "contrast(90%) saturate(100%) brightness(115%)" },
-                { name: "Portrait S", css: "contrast(100%) saturate(105%) brightness(105%)" },
-                { name: "Landscape S", css: "contrast(125%) saturate(130%)" },
-                { name: "Sunset", css: "contrast(120%) saturate(125%) sepia(20%) hue-rotate(-10deg)" },
-                { name: "B&W S", css: "grayscale(100%) contrast(125%)" }
-            ]
+        /**
+         * APPLICATION STATE & CONSTANTS
+         */
+        const AppState = {
+            originalImage: null,    // The unmodified base image (Image object)
+            currentImage: null,     // Base image scaled to working resolution
+            watermarkImage: null,   // The watermark Image object
+            watermarkPos: { x: 50, y: 50 }, // % position relative to canvas
+            isDraggingWatermark: false,
+            
+            // Rendering parameters
+            activeFilterCSS: 'none',
+            frameType: 'none', // none, classic, dark, vintage, thin, square, custom
+            frameColor: '#ffffff',
+            frameThickness: 0.10, // percentage of shortest dimension
+            frameBottomExtra: 0.20,
+            
+            showText: true,
+            textMain: 'TOKYO, JAPAN',
+            textSub: '', // set to today's date on init
+            textColor: '#eab308',
+            textPosY: 0.95, // percentage from top
+            
+            showWatermark: true,
+            watermarkScale: 0.20, // percentage of shortest dimension
+            watermarkOpacity: 0.8,
+
+            // Camera handling
+            stream: null,
+            videoTrack: null,
+            capabilities: null,
+            facingMode: 'environment' // default rear camera
         };
 
-        // --- State ---
-        let currentImage = null; // HTMLImageElement
-        let currentFilter = "none";
-        let currentCssFilterString = "";
-        let currentFrame = "none";
-        let stream = null;
-        let isCameraMode = false;
-        let currentZoom = 1;
-        let originalImageCanvas = document.createElement('canvas'); // To hold unscaled original
+        // Create a default SVG watermark (camera icon + text)
+        const defaultWatermarkSVG = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="300" height="100" viewBox="0 0 300 100">
+                <rect width="300" height="100" fill="transparent"/>
+                <g transform="translate(10, 20)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                        <circle cx="12" cy="13" r="3"/>
+                    </svg>
+                </g>
+                <text x="80" y="55" font-family="'Courier Prime', monospace, sans-serif" font-size="28" font-weight="bold" fill="#ffffff" opacity="0.9">PHOTO<tspan fill="#eab308">STYLE</tspan></text>
+                <text x="82" y="80" font-family="sans-serif" font-size="14" fill="#ffffff" opacity="0.6">COLLECTION 2026</text>
+            </svg>
+        `;
 
-        // --- DOM Elements ---
-        const elements = {
-            imageUpload: document.getElementById('image-upload'),
-            logoUpload: document.getElementById('logoUpload'),
-            appLogo: document.getElementById('app-logo'),
-            exportContainer: document.getElementById('export-container'),
-            canvasWrapper: document.getElementById('canvas-wrapper'),
+        /**
+         * DOM ELEMENTS
+         */
+        const els = {
             mainCanvas: document.getElementById('main-canvas'),
-            originalImage: document.getElementById('original-image'),
-            noImageText: document.getElementById('no-image-text'),
-            
-            cameraSection: document.getElementById('camera-section'),
-            previewSection: document.getElementById('preview-section'),
-            cameraPreview: document.getElementById('camera-preview'),
-            btnCameraMode: document.getElementById('btn-camera-mode'),
-            btnCloseCamera: document.getElementById('btn-close-camera'),
-            btnCapture: document.getElementById('btn-capture'),
-            camExposure: document.getElementById('cam-exposure'),
-            zoomBtns: document.querySelectorAll('.zoom-btn'),
-            
+            previewContainer: document.getElementById('preview-container'),
+            emptyState: document.getElementById('empty-state'),
+            controlsPanel: document.getElementById('controls-panel'),
+            workspaceArea: document.getElementById('workspace-area'),
+            loadingIndicator: document.getElementById('loading-indicator'),
             btnDownload: document.getElementById('btn-download'),
+            btnDownloadMobile: document.getElementById('btn-download-mobile'),
             
-            filterCategorySelect: document.getElementById('filter-category-select'),
-            filterGrid: document.getElementById('filter-grid'),
+            // Upload / Camera
+            fileUpload: document.getElementById('file-upload'),
+            btnOpenCamera: document.getElementById('btn-open-camera'),
+            btnNewImageMobile: document.getElementById('btn-new-image-mobile'),
             
+            // Tabs
+            tabBtns: document.querySelectorAll('.tab-btn'),
+            tabContents: document.querySelectorAll('.tab-content'),
+            
+            // Filters
+            filterContainer: document.getElementById('filter-categories-container'),
+            btnResetFilter: document.getElementById('btn-reset-filter'),
+            
+            // Frames
             frameBtns: document.querySelectorAll('.frame-btn'),
-            frameThickness: document.getElementById('frame-thickness'),
-            thicknessVal: document.getElementById('thickness-val'),
-            frameColor: document.getElementById('frame-color'),
-            resetFrameColor: document.getElementById('reset-frame-color'),
+            customFrameControls: document.getElementById('custom-frame-controls'),
+            inpFrameColor: document.getElementById('frame-color'),
+            inpFrameColorVal: document.getElementById('frame-color-val'),
+            inpFrameThick: document.getElementById('frame-thickness'),
+            inpFrameThickVal: document.getElementById('frame-thickness-val'),
+            inpFrameBottom: document.getElementById('frame-bottom'),
+            inpFrameBottomVal: document.getElementById('frame-bottom-val'),
             
+            // Text
             toggleText: document.getElementById('toggle-text'),
+            inpTextMain: document.getElementById('text-main'),
+            inpTextSub: document.getElementById('text-sub'),
+            inpTextColor: document.getElementById('text-color'),
+            inpTextPosY: document.getElementById('text-pos-y'),
             textControls: document.getElementById('text-controls'),
-            textOverlay: document.getElementById('text-overlay'),
-            inputDate: document.getElementById('input-date'),
-            inputLocation: document.getElementById('input-location'),
-            displayDate: document.getElementById('display-date'),
-            displayLocation: document.getElementById('display-location'),
-            textColor: document.getElementById('text-color'),
-            resetTextColor: document.getElementById('reset-text-color'),
-            setTextOrange: document.getElementById('set-text-orange'),
-            overlayTextContent: document.getElementById('overlay-text-content'),
             
-            adjustInputs: document.querySelectorAll('#tab-adjust input[type="range"]'),
-            btnResetAdjust: document.getElementById('btn-reset-adjust'),
+            // Watermark
+            toggleWm: document.getElementById('toggle-watermark'),
+            wmUpload: document.getElementById('watermark-upload'),
+            inpWmScale: document.getElementById('wm-scale'),
+            inpWmScaleVal: document.getElementById('wm-scale-val'),
+            inpWmOpacity: document.getElementById('wm-opacity'),
+            inpWmOpacityVal: document.getElementById('wm-opacity-val'),
+            wmControls: document.getElementById('watermark-controls'),
+            btnResetWmPos: document.getElementById('btn-reset-wm-pos'),
             
-            tabs: document.querySelectorAll('.tab-btn'),
-            tabContents: document.querySelectorAll('.tab-content')
+            // Camera Modal
+            camModal: document.getElementById('camera-modal'),
+            video: document.getElementById('camera-preview'),
+            btnCloseCam: document.getElementById('btn-close-camera'),
+            btnSwitchCam: document.getElementById('btn-switch-camera'),
+            btnCapture: document.getElementById('btn-capture'),
+            lensBtns: document.querySelectorAll('.lens-btn'),
+            zoomSliderContainer: document.getElementById('zoom-slider-container'),
+            inpCamZoom: document.getElementById('cam-zoom')
         };
-
-        const ctx = elements.mainCanvas.getContext('2d', { willReadFrequently: true });
-
-        // --- Helper: Message Modal ---
-        function showMessage(title, message) {
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-message').textContent = message;
-            document.getElementById('message-modal').classList.remove('hidden');
-        }
-        document.getElementById('modal-close').addEventListener('click', () => {
-            document.getElementById('message-modal').classList.add('hidden');
-        });
-
-        // --- Tab Switching ---
-        elements.tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                elements.tabs.forEach(t => {
-                    t.classList.remove('text-white', 'border-yellow-500');
-                    t.classList.add('text-gray-400', 'border-transparent');
-                });
-                tab.classList.remove('text-gray-400', 'border-transparent');
-                tab.classList.add('text-white', 'border-yellow-500');
-
-                elements.tabContents.forEach(content => content.classList.add('hidden'));
-                document.getElementById(tab.dataset.target).classList.remove('hidden');
-            });
-        });
-        // Set initial active tab visually
-        elements.tabs[0].click();
-
-        // --- Logo Upload ---
-        document.getElementById('logo-upload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    elements.appLogo.src = event.target.result;
-                }
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // --- Filter Generation ---
-        function renderFilters(category) {
-            elements.filterGrid.innerHTML = '';
-            
-            // Add 'Normal' button first
-            const normalBtn = document.createElement('button');
-            normalBtn.className = `filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs w-full ${currentFilter === 'none' ? 'active' : ''}`;
-            normalBtn.textContent = 'Normal';
-            normalBtn.onclick = () => applyPresetFilter('none', '');
-            elements.filterGrid.appendChild(normalBtn);
-
-            const filters = filterDefinitions[category];
-            filters.forEach((filter, index) => {
-                const btn = document.createElement('button');
-                btn.className = `filter-btn bg-gray-800 text-white border border-gray-700 rounded py-2 text-xs w-full truncate px-1 ${currentFilter === filter.name ? 'active' : ''}`;
-                btn.textContent = filter.name;
-                // Add a small preview style using CSS filter
-                btn.style.filter = filter.css; // Preview on text just for subtle effect or we can apply to a bg image. Let's just keep text.
-                
-                btn.onclick = () => applyPresetFilter(filter.name, filter.css);
-                elements.filterGrid.appendChild(btn);
-            });
-        }
-
-        elements.filterCategorySelect.addEventListener('change', (e) => {
-            renderFilters(e.target.value);
-        });
         
-        // Initial render
-        renderFilters(elements.filterCategorySelect.value);
+        const ctx = els.mainCanvas.getContext('2d', { willReadFrequently: true }); // optimize for image manipulation if needed later
 
-        // --- Core Image Handling ---
-        
-        function loadImage(src) {
+        // Initialize default text sub to today's date
+        const today = new Date();
+        const dateString = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth()+1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+        els.inpTextSub.value = dateString;
+        AppState.textSub = dateString;
+
+        // Define DOMURL before using it in the function
+        const DOMURL = window.URL || window.webkitURL || window;
+
+        // Load default watermark
+        loadDefaultWatermark();
+
+        function loadDefaultWatermark() {
             const img = new Image();
+            const svg = new Blob([defaultWatermarkSVG], {type: 'image/svg+xml;charset=utf-8'});
+            const url = DOMURL.createObjectURL(svg);
             img.onload = () => {
-                currentImage = img;
-                
-                // Store high-res original on an offscreen canvas
-                originalImageCanvas.width = img.width;
-                originalImageCanvas.height = img.height;
-                const oCtx = originalImageCanvas.getContext('2d');
-                oCtx.drawImage(img, 0, 0);
-
-                elements.originalImage.src = src;
-                
-                elements.noImageText.classList.add('hidden');
-                elements.exportContainer.classList.remove('hidden');
-                elements.btnDownload.disabled = false;
-                
-                // Set main canvas size relative for display, but actual resolution matches image
-                // To prevent massive lag, we might scale down extremely large images for preview, 
-                // but for this implementation we will rely on CSS to scale the canvas visually, 
-                // while keeping canvas internal resolution high.
-                elements.mainCanvas.width = img.width;
-                elements.mainCanvas.height = img.height;
-                
-                updateCanvas();
-                resetAdjustments(); // Reset sliders on new image
-                
-                // If coming from camera, hide camera view
-                if(isCameraMode) stopCamera();
+                AppState.watermarkImage = img;
+                if (AppState.originalImage) renderFinalImage();
             };
-            img.src = src;
+            img.src = url;
         }
 
-        elements.imageUpload.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    loadImage(event.target.result);
-                }
-                reader.readAsDataURL(file);
+        // --- STREAMING_CHUNK:Defining Filter Database (60 filters in total)... ---
+        /**
+         * FILTER DEFINITIONS
+         * We construct complex CSS filters to emulate different styles.
+         */
+        const filterDatabase = [
+            {
+                category: "10 Filter Retro (Era 70s-80s)",
+                filters: [
+                    { name: "Nostalgia", css: "sepia(0.6) contrast(1.2) brightness(0.9) saturate(1.2) hue-rotate(-10deg)" },
+                    { name: "Faded Memory", css: "contrast(0.8) brightness(1.1) saturate(0.6) sepia(0.3)" },
+                    { name: "Polaroid 70s", css: "sepia(0.4) saturate(1.5) contrast(1.1) hue-rotate(-20deg) brightness(1.1)" },
+                    { name: "Warm Glow", css: "sepia(0.5) brightness(1.1) contrast(1.1) saturate(1.4)" },
+                    { name: "Retro Blue", css: "sepia(0.2) hue-rotate(180deg) saturate(1.5) contrast(1.2) brightness(0.9)" },
+                    { name: "Washed Out", css: "contrast(0.7) brightness(1.2) saturate(0.5)" },
+                    { name: "Sun-Kissed", css: "sepia(0.3) saturate(1.6) contrast(1.1) brightness(1.1) hue-rotate(-15deg)" },
+                    { name: "Vintage Green", css: "sepia(0.4) hue-rotate(50deg) saturate(1.3) contrast(1.1)" },
+                    { name: "Old Postcard", css: "sepia(0.8) contrast(1.2) saturate(0.8) brightness(0.9)" },
+                    { name: "Neon 80s", css: "saturate(2.5) contrast(1.3) hue-rotate(15deg) brightness(1.1)" }
+                ]
+            },
+            {
+                category: "10 Filter Vintage (Era Klasik)",
+                filters: [
+                    { name: "Classic B&W", css: "grayscale(1) contrast(1.2) brightness(0.9)" },
+                    { name: "Sepia Antique", css: "sepia(1) contrast(1.1) brightness(0.8)" },
+                    { name: "Silver Gelatin", css: "grayscale(1) contrast(1.5) brightness(0.8) sepia(0.1)" },
+                    { name: "Daguerreotype", css: "sepia(0.8) grayscale(0.5) contrast(1.4) brightness(1.1)" },
+                    { name: "Faded Monolith", css: "grayscale(1) contrast(0.7) brightness(1.2)" },
+                    { name: "Tintype", css: "sepia(0.6) grayscale(0.8) contrast(1.3) brightness(0.9)" },
+                    { name: "Vintage Matte", css: "sepia(0.4) contrast(0.85) brightness(1.1) saturate(0.7)" },
+                    { name: "Amber Print", css: "sepia(1) hue-rotate(-20deg) contrast(1.2) saturate(1.5)" },
+                    { name: "Dusty Attic", css: "sepia(0.5) contrast(0.9) brightness(0.8) saturate(0.4)" },
+                    { name: "High Contrast B&W", css: "grayscale(1) contrast(2) brightness(0.9)" }
+                ]
+            },
+            {
+                category: "10 Filter Kamera Ternama (Emulasi)",
+                filters: [
+                    { name: "Leica Monochrom", css: "grayscale(1) contrast(1.4) brightness(0.95)" },
+                    { name: "Portra 400 (Kodak)", css: "saturate(1.2) contrast(0.9) sepia(0.1) brightness(1.05) hue-rotate(-5deg)" },
+                    { name: "Fuji Superia", css: "saturate(1.4) contrast(1.1) hue-rotate(10deg) brightness(0.95)" },
+                    { name: "Polaroid SX-70", css: "sepia(0.3) saturate(1.2) contrast(0.9) brightness(1.1)" },
+                    { name: "Ilford HP5", css: "grayscale(1) contrast(1.2) brightness(1.1)" },
+                    { name: "Kodachrome", css: "saturate(1.8) contrast(1.3) sepia(0.1) brightness(0.95) hue-rotate(-10deg)" },
+                    { name: "Agfa Vista", css: "saturate(1.5) contrast(1.2) hue-rotate(5deg) brightness(1.05)" },
+                    { name: "Hasselblad Natural", css: "contrast(1.1) saturate(1.1) brightness(1.0) sepia(0.05)" },
+                    { name: "Instax Mini", css: "contrast(1.1) brightness(1.15) saturate(1.1) sepia(0.15)" },
+                    { name: "Lomo LC-A", css: "saturate(2) contrast(1.5) brightness(0.8) hue-rotate(10deg) sepia(0.2)" }
+                ]
+            },
+            {
+                category: "10 Filter Cinematic (Movie Style)",
+                filters: [
+                    { name: "Teal & Orange", css: "contrast(1.2) saturate(1.3) hue-rotate(15deg) sepia(0.2)" }, // Simplified teal/orange via hue shift
+                    { name: "Matrix Green", css: "hue-rotate(90deg) saturate(1.2) contrast(1.3) brightness(0.9) sepia(0.2)" },
+                    { name: "Bleach Bypass", css: "contrast(1.6) saturate(0.4) brightness(0.9)" },
+                    { name: "Moody Dark", css: "brightness(0.7) contrast(1.3) saturate(0.8)" },
+                    { name: "Cyberpunk", css: "saturate(2) hue-rotate(-40deg) contrast(1.3) brightness(1.1)" },
+                    { name: "Sci-Fi Blue", css: "hue-rotate(180deg) saturate(1.2) contrast(1.2) brightness(0.9) sepia(0.1)" },
+                    { name: "Warm Epic", css: "sepia(0.4) contrast(1.2) saturate(1.2) brightness(1.05)" },
+                    { name: "Desaturated Action", css: "saturate(0.5) contrast(1.4) brightness(0.95)" },
+                    { name: "Golden Hour Film", css: "sepia(0.5) saturate(1.5) contrast(1.1) brightness(1.1) hue-rotate(-10deg)" },
+                    { name: "Noir Mystery", css: "grayscale(1) contrast(1.6) brightness(0.8)" }
+                ]
+            },
+            {
+                category: "10 Filter Gaya Film (Film Stocks)",
+                filters: [
+                    { name: "Cinestill 800T", css: "saturate(1.3) contrast(1.2) hue-rotate(-15deg) brightness(1.05)" },
+                    { name: "Ektar 100", css: "saturate(1.6) contrast(1.3) brightness(0.95)" },
+                    { name: "Velvia 50", css: "saturate(2) contrast(1.4) brightness(1.0)" },
+                    { name: "Provia 100F", css: "saturate(1.2) contrast(1.1) brightness(1.0) hue-rotate(5deg)" },
+                    { name: "Tri-X 400", css: "grayscale(1) contrast(1.4) brightness(0.9)" },
+                    { name: "ColorPlus 200", css: "sepia(0.3) saturate(1.3) contrast(1.0) brightness(1.1)" },
+                    { name: "Gold 200", css: "sepia(0.4) saturate(1.4) contrast(1.1) brightness(1.0) hue-rotate(-5deg)" },
+                    { name: "Lomography 800", css: "saturate(1.5) contrast(1.2) sepia(0.2) brightness(1.1)" },
+                    { name: "Ilford Delta 3200", css: "grayscale(1) contrast(1.1) brightness(1.2)" }, // Represents low contrast grainy (grain added via CSS is hard, mimicking contrast)
+                    { name: "Fuji Natura", css: "saturate(1.1) contrast(0.9) brightness(1.15) hue-rotate(-5deg)" }
+                ]
+            },
+            {
+                category: "10 Filter Ala Foto Profesional (Lighting & Color)",
+                filters: [
+                    { name: "Balanced HDR", css: "contrast(0.9) saturate(1.2) brightness(1.05)" },
+                    { name: "Studio Portrait", css: "brightness(1.1) contrast(0.95) saturate(1.05)" },
+                    { name: "Crisp Landscape", css: "contrast(1.2) saturate(1.3) brightness(0.95)" },
+                    { name: "Soft Light", css: "brightness(1.15) contrast(0.85) saturate(0.9)" },
+                    { name: "Hard Light", css: "contrast(1.4) saturate(1.1) brightness(0.9)" },
+                    { name: "Rich Shadow", css: "brightness(0.85) contrast(1.3) saturate(1.2)" },
+                    { name: "Bright & Airy", css: "brightness(1.2) contrast(0.9) saturate(1.1)" },
+                    { name: "Vibrant Colors", css: "saturate(1.5) contrast(1.1)" },
+                    { name: "Cool Tones", css: "hue-rotate(20deg) saturate(1.1) brightness(1.05)" },
+                    { name: "Warm Tones", css: "sepia(0.25) saturate(1.1) brightness(1.0) hue-rotate(-5deg)" }
+                ]
             }
-        });
+        ];
 
-        // --- Apply Adjustments / Filters ---
-        
-        function applyPresetFilter(name, cssString) {
-            currentFilter = name;
-            currentCssFilterString = cssString;
-            
-            // Update active state on buttons
-            document.querySelectorAll('#filter-grid .filter-btn').forEach(btn => {
-                if (btn.textContent === name || (name==='none' && btn.textContent==='Normal')) {
+        // --- STREAMING_CHUNK:Building UI dynamically (Filters)... ---
+        function buildFilterUI() {
+            let html = '';
+            filterDatabase.forEach((cat, catIndex) => {
+                html += `<div class="mb-6">
+                            <h3 class="text-yellow-500 font-semibold mb-3 text-sm uppercase tracking-wider sticky top-0 bg-black py-1 z-10">${cat.category}</h3>
+                            <div class="flex overflow-x-auto gap-3 pb-4 filter-scroll">`;
+                
+                cat.filters.forEach((filter, index) => {
+                    const id = `filter-${catIndex}-${index}`;
+                    // We use a dummy background gradient for the button preview since we can't easily apply canvas css filter to a div bg image without knowing the image yet
+                    html += `<button class="filter-btn flex-shrink-0" data-css="${filter.css}" id="${id}">
+                                <div class="filter-btn-preview" style="background: linear-gradient(45deg, #374151, #1f2937); filter: ${filter.css}"></div>
+                                <span>${filter.name}</span>
+                             </button>`;
+                });
+                
+                html += `   </div>
+                         </div>`;
+            });
+            els.filterContainer.innerHTML = html;
+
+            // Attach event listeners to new buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-
-            // Parse CSS string to update adjustment sliders for visual feedback
-            // This is complex, so we'll just reset sliders to represent the 'base' of the filter
-            // Or, simpler: applying a preset resets manual adjustments to neutral relative to the filter.
-            resetAdjustmentsUIOnly();
-            
-            updateCanvas();
-        }
-
-        function getManualFilterString() {
-            let filters = [];
-            elements.adjustInputs.forEach(input => {
-                const filter = input.dataset.filter;
-                const val = input.value;
-                const suffix = input.dataset.suffix || '%';
-                // Only add if not default
-                if (filter === 'blur' && val === '0') return;
-                if ((filter === 'brightness' || filter === 'contrast' || filter === 'saturate') && val === '100') return;
-                if ((filter === 'sepia' || filter === 'hue-rotate') && val === '0') return;
-                
-                filters.push(`${filter}(${val}${suffix})`);
-            });
-            return filters.join(' ');
-        }
-
-        elements.adjustInputs.forEach(input => {
-            input.addEventListener('input', (e) => {
-                // Update label
-                const suffix = input.dataset.suffix || '%';
-                document.getElementById(`val-${input.dataset.filter}`).textContent = `${input.value}${suffix}`;
-                
-                // Clear preset selection as we are manual adjusting now
-                currentFilter = "Custom";
-                currentCssFilterString = "";
-                document.querySelectorAll('#filter-grid .filter-btn').forEach(btn => btn.classList.remove('active'));
-                
-                updateCanvas();
-            });
-        });
-
-        function resetAdjustments() {
-            resetAdjustmentsUIOnly();
-            currentFilter = "none";
-            currentCssFilterString = "";
-            document.querySelectorAll('#filter-grid .filter-btn').forEach(btn => {
-                if(btn.textContent==='Normal') btn.classList.add('active');
-                else btn.classList.remove('active');
-            });
-            updateCanvas();
-        }
-
-        function resetAdjustmentsUIOnly() {
-            elements.adjustInputs.forEach(input => {
-                input.value = input.defaultValue;
-                const suffix = input.dataset.suffix || '%';
-                document.getElementById(`val-${input.dataset.filter}`).textContent = `${input.value}${suffix}`;
-            });
-        }
-        
-        elements.btnResetAdjust.addEventListener('click', resetAdjustments);
-
-        // --- Main Render Function ---
-        function updateCanvas() {
-            if (!currentImage) return;
-
-            // Determine final filter string
-            let finalFilter = currentCssFilterString;
-            if (currentFilter === "Custom") {
-                finalFilter = getManualFilterString();
-            }
-
-            // Apply filter to canvas context
-            ctx.filter = finalFilter || 'none';
-            
-            // Clear and draw original
-            ctx.clearRect(0, 0, elements.mainCanvas.width, elements.mainCanvas.height);
-            ctx.drawImage(originalImageCanvas, 0, 0);
-            
-            // Reset filter so it doesn't affect future drawings unintentionally
-            ctx.filter = 'none';
-        }
-
-        // --- Frame Logic ---
-        
-        function updateFrameClass() {
-            // Remove old frame classes
-            elements.canvasWrapper.className = 'bg-white transition-all duration-300 relative inline-block';
-            if (currentFrame !== 'none') {
-                elements.canvasWrapper.classList.add(currentFrame);
-            }
-            
-            // Apply custom thickness if set
-            const thickness = elements.frameThickness.value;
-            if (thickness > 0) {
-                // Determine layout aspect roughly based on image to decide padding direction, 
-                // but simpler is uniform or standard polaroid (bottom heavy)
-                if (currentFrame !== 'none') {
-                    // Override bottom padding for polaroid effect
-                    const topSides = thickness;
-                    const bottom = thickness * 3; // Make bottom 3x thicker
-                    elements.canvasWrapper.style.padding = `${topSides}% ${topSides}% ${bottom}% ${topSides}%`;
-                    elements.thicknessVal.textContent = `Custom (${thickness}%)`;
-                } else {
-                     elements.canvasWrapper.style.padding = '0';
-                }
-            } else {
-                elements.canvasWrapper.style.padding = ''; // Reset to class defaults
-                elements.thicknessVal.textContent = 'Default (Berdasarkan Jenis)';
-            }
-
-            // Apply custom color
-            elements.canvasWrapper.style.backgroundColor = elements.frameColor.value;
-        }
-
-        elements.frameBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                elements.frameBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentFrame = btn.dataset.frame;
-                updateFrameClass();
-            });
-        });
-
-        elements.frameThickness.addEventListener('input', updateFrameClass);
-        
-        elements.frameColor.addEventListener('input', updateFrameClass);
-        elements.resetFrameColor.addEventListener('click', () => {
-            elements.frameColor.value = '#ffffff';
-            updateFrameClass();
-        });
-
-        // --- Text Overlay Logic ---
-        
-        function updateTextDisplay() {
-            const show = elements.toggleText.checked;
-            elements.textControls.classList.toggle('opacity-50', !show);
-            elements.textControls.classList.toggle('pointer-events-none', !show);
-            
-            if (show) {
-                elements.textOverlay.classList.remove('opacity-0');
-                
-                let dateStr = elements.inputDate.value;
-                if(!dateStr) {
-                    const today = new Date();
-                    // Example format: '26 OCT 24
-                    const year = today.getFullYear().toString().slice(-2);
-                    const month = today.toLocaleString('en-US', { month: 'short' }).toUpperCase();
-                    dateStr = `'${year} ${month} ${today.getDate()}`;
-                    elements.inputDate.value = dateStr;
-                }
-                elements.displayDate.textContent = dateStr;
-                
-                let locStr = elements.inputLocation.value;
-                elements.displayLocation.textContent = locStr;
-
-                elements.overlayTextContent.style.color = elements.textColor.value;
-
-            } else {
-                elements.textOverlay.classList.add('opacity-0');
-            }
-        }
-
-        elements.toggleText.addEventListener('change', updateTextDisplay);
-        elements.inputDate.addEventListener('input', updateTextDisplay);
-        elements.inputLocation.addEventListener('input', updateTextDisplay);
-        
-        elements.textColor.addEventListener('input', updateTextDisplay);
-        elements.resetTextColor.addEventListener('click', () => {
-            elements.textColor.value = '#000000';
-            updateTextDisplay();
-        });
-        elements.setTextOrange.addEventListener('click', () => {
-            elements.textColor.value = '#ff6600';
-            updateTextDisplay();
-        });
-
-        // Initialize text toggle state
-        updateTextDisplay();
-
-        // --- Camera Handling ---
-        
-        async function startCamera() {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: 'environment', // Prefer back camera
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
-                    } 
+                    AppState.activeFilterCSS = btn.dataset.css;
+                    requestAnimationFrame(renderFinalImage);
                 });
-                elements.cameraPreview.srcObject = stream;
-                elements.cameraSection.classList.remove('hidden');
-                elements.previewSection.classList.add('hidden');
-                isCameraMode = true;
-                
-                // Attempt to get hardware controls if available
-                const track = stream.getVideoTracks()[0];
-                const capabilities = track.getCapabilities();
-                
-                // Setup Zoom
-                elements.zoomBtns.forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        elements.zoomBtns.forEach(b => b.classList.remove('text-yellow-400'));
-                        btn.classList.add('text-yellow-400');
-                        currentZoom = parseFloat(btn.dataset.zoom);
-                        
-                        // Apply hardware zoom if supported, else we'll simulate on capture
-                        if (capabilities.zoom) {
-                            // Map 1x, 2x, 3x to min/max range roughly
-                            const min = capabilities.zoom.min;
-                            const max = capabilities.zoom.max;
-                            // Very simple mapping, actual hardware mapping is more complex
-                            let val = min + ((currentZoom - 1) / 2) * (max - min); 
-                            track.applyConstraints({advanced: [{zoom: Math.min(val, max)}]}).catch(e=>console.log("Zoom not supported by hardware"));
-                        } else {
-                            // Simulate digital zoom by scaling the video element
-                            elements.cameraPreview.style.transform = `scale(${currentZoom})`;
-                        }
-                    });
-                });
-                // Reset zoom UI
-                elements.zoomBtns[0].click();
+            });
+        }
+        buildFilterUI();
 
-            } catch (err) {
-                console.error("Error accessing camera:", err);
-                showMessage("Gagal", "Tidak dapat mengakses kamera. Pastikan Anda telah memberikan izin.");
+        // --- STREAMING_CHUNK:Handling Tabs & Basic UI Events... ---
+        els.tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active from all tabs
+                els.tabBtns.forEach(b => {
+                    b.classList.remove('text-white', 'border-yellow-500');
+                    b.classList.add('text-gray-400', 'border-transparent');
+                });
+                els.tabContents.forEach(c => c.classList.add('hidden'));
+
+                // Add active to clicked
+                btn.classList.remove('text-gray-400', 'border-transparent');
+                btn.classList.add('text-white', 'border-yellow-500');
+                const targetId = btn.dataset.target;
+                document.getElementById(targetId).classList.remove('hidden');
+            });
+        });
+
+        // Frame Controls
+        els.frameBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                els.frameBtns.forEach(b => { b.classList.remove('btn-active'); b.classList.add('btn-secondary'); });
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-active');
+                
+                AppState.frameType = btn.dataset.frame;
+                
+                if (AppState.frameType === 'custom') {
+                    els.customFrameControls.classList.remove('hidden');
+                } else {
+                    els.customFrameControls.classList.add('hidden');
+                }
+                
+                // Predefined frame settings
+                switch(AppState.frameType) {
+                    case 'none': AppState.frameThickness = 0; break;
+                    case 'classic': AppState.frameColor = '#ffffff'; AppState.frameThickness = 0.08; AppState.frameBottomExtra = 0.20; break;
+                    case 'dark': AppState.frameColor = '#111111'; AppState.frameThickness = 0.08; AppState.frameBottomExtra = 0.20; break;
+                    case 'vintage': AppState.frameColor = '#f5eedc'; AppState.frameThickness = 0.08; AppState.frameBottomExtra = 0.22; break;
+                    case 'thin': AppState.frameColor = '#ffffff'; AppState.frameThickness = 0.03; AppState.frameBottomExtra = 0.03; break;
+                    case 'square': AppState.frameColor = '#ffffff'; AppState.frameThickness = 0.10; AppState.frameBottomExtra = 0.25; break;
+                    case 'custom': 
+                        AppState.frameColor = els.inpFrameColor.value;
+                        AppState.frameThickness = parseInt(els.inpFrameThick.value) / 100;
+                        AppState.frameBottomExtra = parseInt(els.inpFrameBottom.value) / 100;
+                        break;
+                }
+                requestAnimationFrame(renderFinalImage);
+            });
+        });
+
+        // Custom Frame Inputs
+        const updateCustomFrame = () => {
+            if(AppState.frameType !== 'custom') return;
+            AppState.frameColor = els.inpFrameColor.value;
+            els.inpFrameColorVal.textContent = AppState.frameColor;
+            
+            AppState.frameThickness = parseInt(els.inpFrameThick.value) / 100;
+            els.inpFrameThickVal.textContent = els.inpFrameThick.value + '%';
+            
+            AppState.frameBottomExtra = parseInt(els.inpFrameBottom.value) / 100;
+            els.inpFrameBottomVal.textContent = els.inpFrameBottom.value + '%';
+            
+            requestAnimationFrame(renderFinalImage);
+        };
+        els.inpFrameColor.addEventListener('input', updateCustomFrame);
+        els.inpFrameThick.addEventListener('input', updateCustomFrame);
+        els.inpFrameBottom.addEventListener('input', updateCustomFrame);
+
+        // Text Controls
+        const updateText = () => {
+            AppState.showText = els.toggleText.checked;
+            els.textControls.style.opacity = AppState.showText ? '1' : '0.5';
+            els.textControls.style.pointerEvents = AppState.showText ? 'auto' : 'none';
+            
+            AppState.textMain = els.inpTextMain.value;
+            AppState.textSub = els.inpTextSub.value;
+            AppState.textColor = els.inpTextColor.value;
+            AppState.textPosY = parseInt(els.inpTextPosY.value) / 100;
+            
+            requestAnimationFrame(renderFinalImage);
+        }
+        els.toggleText.addEventListener('change', updateText);
+        els.inpTextMain.addEventListener('input', updateText);
+        els.inpTextSub.addEventListener('input', updateText);
+        els.inpTextColor.addEventListener('input', updateText);
+        els.inpTextPosY.addEventListener('input', updateText);
+
+        // Watermark Controls
+        const updateWatermark = () => {
+            AppState.showWatermark = els.toggleWm.checked;
+            els.wmControls.style.opacity = AppState.showWatermark ? '1' : '0.5';
+            els.wmControls.style.pointerEvents = AppState.showWatermark ? 'auto' : 'none';
+            
+            AppState.watermarkScale = parseInt(els.inpWmScale.value) / 100;
+            els.inpWmScaleVal.textContent = els.inpWmScale.value + '%';
+            
+            AppState.watermarkOpacity = parseInt(els.inpWmOpacity.value) / 100;
+            els.inpWmOpacityVal.textContent = els.inpWmOpacity.value + '%';
+            
+            requestAnimationFrame(renderFinalImage);
+        }
+        els.toggleWm.addEventListener('change', updateWatermark);
+        els.inpWmScale.addEventListener('input', updateWatermark);
+        els.inpWmOpacity.addEventListener('input', updateWatermark);
+        
+        els.btnResetWmPos.addEventListener('click', () => {
+            AppState.watermarkPos = { x: 50, y: 50 };
+            requestAnimationFrame(renderFinalImage);
+        });
+
+        // Custom Watermark Upload
+        els.wmUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    AppState.watermarkImage = img;
+                    requestAnimationFrame(renderFinalImage);
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+
+        // Filter Reset
+        els.btnResetFilter.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            AppState.activeFilterCSS = 'none';
+            requestAnimationFrame(renderFinalImage);
+        });
+
+
+        // --- STREAMING_CHUNK:Image Loading and Core Render Logic... ---
+        // Handle File Upload for Main Image
+        els.fileUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            showLoading();
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    initWorkspace(img);
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+
+        function showLoading() {
+            els.loadingIndicator.classList.remove('hidden');
+        }
+        function hideLoading() {
+            els.loadingIndicator.classList.add('hidden');
+        }
+
+        function initWorkspace(img) {
+            AppState.originalImage = img;
+            
+            // Set UI states
+            els.emptyState.style.display = 'none';
+            els.mainCanvas.style.display = 'block';
+            els.controlsPanel.style.display = 'flex';
+            els.btnDownload.classList.remove('hidden');
+            
+            // Set first tab active
+            els.tabBtns[0].click();
+            
+            // Initialize canvas size (preview size, not full res yet)
+            renderFinalImage();
+            
+            // Update filter previews backgrounds (optional enhancement: draw mini canvases)
+            if(img.src.length < 500000) { // Only do this for smaller images to avoid locking UI
+                 updateFilterPreviews(img);
+            }
+
+            hideLoading();
+        }
+
+        // Helper to update filter thumbnails (very basic approach)
+        function updateFilterPreviews(img) {
+            const btns = document.querySelectorAll('.filter-btn-preview');
+            // We use the image as background. The inline filter CSS is already applied.
+            btns.forEach(btn => {
+                btn.style.backgroundImage = `url(${img.src})`;
+            });
+        }
+
+
+        /**
+         * MAIN RENDERING ENGINE
+         * Draws the image, applies filters, adds frames, text, and watermark.
+         * Uses HTML5 Canvas context properties.
+         * 
+         * Note: CSS filter property on Canvas context is widely supported now.
+         */
+        function renderFinalImage(isExport = false) {
+            if (!AppState.originalImage) return;
+
+            const img = AppState.originalImage;
+            
+            // 1. Determine base canvas dimensions
+            // For preview, we limit size for performance. For export, we use original resolution.
+            let baseWidth = img.width;
+            let baseHeight = img.height;
+            
+            // If exporting, keep original high res. If previewing, scale down if too large.
+            const maxPreviewSize = 1600; // pixels
+            if (!isExport) {
+                if (baseWidth > maxPreviewSize || baseHeight > maxPreviewSize) {
+                    const ratio = Math.min(maxPreviewSize / baseWidth, maxPreviewSize / baseHeight);
+                    baseWidth *= ratio;
+                    baseHeight *= ratio;
+                }
+            }
+
+            // 2. Calculate Frame Dimensions
+            let finalWidth = baseWidth;
+            let finalHeight = baseHeight;
+            let imgOffsetX = 0;
+            let imgOffsetY = 0;
+            
+            // Shortest dimension determines frame scale
+            const shortDim = Math.min(baseWidth, baseHeight);
+            
+            if (AppState.frameType !== 'none' && AppState.frameThickness > 0) {
+                const thickPx = shortDim * AppState.frameThickness;
+                const bottomThickPx = thickPx + (shortDim * AppState.frameBottomExtra);
+                
+                finalWidth = baseWidth + (thickPx * 2);
+                finalHeight = baseHeight + thickPx + bottomThickPx;
+                
+                imgOffsetX = thickPx;
+                imgOffsetY = thickPx;
+            } else if (AppState.frameType === 'square') {
+                 // Force square frame crop
+                 const size = Math.max(baseWidth, baseHeight);
+                 const thickPx = size * AppState.frameThickness;
+                 const bottomThickPx = thickPx + (size * AppState.frameBottomExtra);
+                 
+                 finalWidth = size + (thickPx * 2);
+                 finalHeight = size + thickPx + bottomThickPx;
+                 
+                 // Center image in the square frame
+                 imgOffsetX = thickPx + (size - baseWidth) / 2;
+                 imgOffsetY = thickPx + (size - baseHeight) / 2;
+            }
+
+            // 3. Setup Canvas
+            els.mainCanvas.width = finalWidth;
+            els.mainCanvas.height = finalHeight;
+            
+            // Clear canvas (useful for transparency if frame color is unset, though unlikely)
+            ctx.clearRect(0, 0, finalWidth, finalHeight);
+
+            // 4. Draw Frame Background
+            if (AppState.frameType !== 'none') {
+                ctx.fillStyle = AppState.frameColor;
+                ctx.fillRect(0, 0, finalWidth, finalHeight);
+            }
+
+            // 5. Draw Image with Filter
+            ctx.save();
+            // Apply the constructed CSS filter string directly to the canvas context
+            ctx.filter = AppState.activeFilterCSS;
+            
+            // If square frame, we might need to clip to avoid image spilling over if it's not actually square
+             if (AppState.frameType === 'square') {
+                ctx.beginPath();
+                ctx.rect(imgOffsetX, imgOffsetY, baseWidth, baseHeight);
+                ctx.clip();
+            }
+            
+            ctx.drawImage(img, imgOffsetX, imgOffsetY, baseWidth, baseHeight);
+            ctx.restore(); // Removes the filter so it doesn't affect frame/text/watermark
+
+            // 6. Draw Inner Shadow/Border on Image (optional realism for polaroids)
+            if (AppState.frameType !== 'none' && AppState.frameType !== 'thin') {
+                ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                ctx.lineWidth = Math.max(1, shortDim * 0.002);
+                ctx.strokeRect(imgOffsetX, imgOffsetY, baseWidth, baseHeight);
+            }
+
+            // 7. Draw Text (Typewriter Style)
+            if (AppState.showText) {
+                // Calculate position relative to final height
+                const yPos = finalHeight * AppState.textPosY;
+                const fontSize = shortDim * 0.035; // Responsive font size
+                
+                ctx.fillStyle = AppState.textColor;
+                ctx.font = `bold ${fontSize}px 'Courier Prime', monospace`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Add slight shadow for realism/legibility
+                ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 1;
+
+                // Main Text
+                if (AppState.textMain) {
+                    ctx.fillText(AppState.textMain, finalWidth / 2, yPos);
+                }
+                
+                // Sub Text
+                if (AppState.textSub) {
+                    ctx.font = `${fontSize * 0.6}px 'Courier Prime', monospace`;
+                    // Place below main text
+                    const subYPos = AppState.textMain ? yPos + (fontSize * 1.2) : yPos;
+                    ctx.fillText(AppState.textSub, finalWidth / 2, subYPos);
+                }
+                
+                // Reset shadow
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+            }
+
+            // 8. Draw Watermark
+            if (AppState.showWatermark && AppState.watermarkImage) {
+                const wm = AppState.watermarkImage;
+                
+                // Calculate size based on shortest dimension of canvas
+                const wmTargetWidth = finalWidth * AppState.watermarkScale;
+                const ratio = wmTargetWidth / wm.width;
+                const wmTargetHeight = wm.height * ratio;
+                
+                // Calculate position (watermarkPos is percentage 0-100)
+                // Center the watermark on the point
+                const xPos = (finalWidth * (AppState.watermarkPos.x / 100)) - (wmTargetWidth / 2);
+                const yPos = (finalHeight * (AppState.watermarkPos.y / 100)) - (wmTargetHeight / 2);
+
+                ctx.save();
+                ctx.globalAlpha = AppState.watermarkOpacity;
+                ctx.drawImage(wm, xPos, yPos, wmTargetWidth, wmTargetHeight);
+                ctx.restore();
             }
         }
+
+
+        // --- STREAMING_CHUNK:Implementing Interactive Watermark Dragging... ---
+        /**
+         * Watermark Dragging Logic on Canvas
+         */
+        let isDragging = false;
+        
+        function getPointerPos(e) {
+            const rect = els.mainCanvas.getBoundingClientRect();
+            // Handle both touch and mouse
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            // Calculate position relative to canvas logical dimensions
+            const scaleX = els.mainCanvas.width / rect.width;
+            const scaleY = els.mainCanvas.height / rect.height;
+            
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top) * scaleY;
+            
+            // Convert to percentage
+            return {
+                x: (x / els.mainCanvas.width) * 100,
+                y: (y / els.mainCanvas.height) * 100
+            };
+        }
+
+        function handlePointerDown(e) {
+            if (!AppState.showWatermark || !AppState.originalImage) return;
+            
+            // Very basic hit detection: check if click is near current watermark center
+            const pos = getPointerPos(e);
+            
+            // Calculate rough hit box based on scale
+            const wmTargetWidthPct = AppState.watermarkScale * 100;
+            // Assuming 3:1 aspect ratio roughly for default, adjust hit box
+            const wmTargetHeightPct = wmTargetWidthPct * 0.33; 
+            
+            const diffX = Math.abs(pos.x - AppState.watermarkPos.x);
+            const diffY = Math.abs(pos.y - AppState.watermarkPos.y);
+            
+            // Allow grabbing if within bounds (generous bounds for easier touch)
+            if (diffX < wmTargetWidthPct/2 + 10 && diffY < wmTargetHeightPct/2 + 10) {
+                isDragging = true;
+                els.mainCanvas.style.cursor = 'grabbing';
+                // Prevent scrolling on mobile while dragging
+                if(e.type === 'touchstart') e.preventDefault(); 
+            }
+        }
+
+        function handlePointerMove(e) {
+            if (!isDragging) return;
+            const pos = getPointerPos(e);
+            
+            // Clamp to 0-100
+            AppState.watermarkPos.x = Math.max(0, Math.min(100, pos.x));
+            AppState.watermarkPos.y = Math.max(0, Math.min(100, pos.y));
+            
+            // Re-render, use requestAnimationFrame to prevent lagging
+            requestAnimationFrame(() => renderFinalImage(false));
+            if(e.type === 'touchmove') e.preventDefault();
+        }
+
+        function handlePointerUp() {
+            isDragging = false;
+            els.mainCanvas.style.cursor = 'default';
+        }
+
+        // Mouse events
+        els.mainCanvas.addEventListener('mousedown', handlePointerDown);
+        window.addEventListener('mousemove', handlePointerMove);
+        window.addEventListener('mouseup', handlePointerUp);
+
+        // Touch events
+        els.mainCanvas.addEventListener('touchstart', handlePointerDown, {passive: false});
+        window.addEventListener('touchmove', handlePointerMove, {passive: false});
+        window.addEventListener('touchend', handlePointerUp);
+
+
+        // --- STREAMING_CHUNK:Implementing Download functionality... ---
+        const handleDownload = () => {
+            if (!AppState.originalImage) return;
+            
+            showLoading();
+            
+            // Need a slight delay to allow UI to show loading spinner before main thread blocks on rendering huge canvas
+            setTimeout(() => {
+                // Force full resolution render
+                renderFinalImage(true);
+                
+                try {
+                    // Export high quality JPEG
+                    const dataURL = els.mainCanvas.toDataURL('image/jpeg', 0.95);
+                    
+                    // Create download link
+                    const link = document.createElement('a');
+                    const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,"");
+                    link.download = `PhotoStyle_${dateStr}_${Date.now()}.jpg`;
+                    link.href = dataURL;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } catch (e) {
+                    console.error("Export error: ", e);
+                    alert("Terjadi kesalahan saat menyimpan foto. Pastikan gambar tidak terlalu besar atau coba di browser lain.");
+                } finally {
+                    // Re-render preview resolution
+                    renderFinalImage(false);
+                    hideLoading();
+                }
+            }, 100);
+        };
+        
+        els.btnDownload.addEventListener('click', handleDownload);
+        els.btnDownloadMobile.addEventListener('click', handleDownload);
+        els.btnNewImageMobile.addEventListener('click', () => { els.fileUpload.click(); });
+
+
+        // --- STREAMING_CHUNK:Building Advanced Camera Interface... ---
+        /**
+         * CAMERA API INTEGRATION
+         * Handles multiple lenses and zoom if browser supports MediaTrackConstraints.zoom
+         */
+        
+        async function openCamera() {
+            els.camModal.classList.add('show');
+            await startCamera();
+        }
+
+        function closeCamera() {
+            els.camModal.classList.remove('show');
+            stopCamera();
+        }
+
+        els.btnOpenCamera.addEventListener('click', openCamera);
+        els.btnCloseCam.addEventListener('click', closeCamera);
+        
+        // Switch between front/back
+        els.btnSwitchCam.addEventListener('click', async () => {
+            AppState.facingMode = AppState.facingMode === 'environment' ? 'user' : 'environment';
+            await startCamera();
+        });
 
         function stopCamera() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+            if (AppState.stream) {
+                AppState.stream.getTracks().forEach(track => track.stop());
+                AppState.stream = null;
             }
-            elements.cameraSection.classList.add('hidden');
-            elements.previewSection.classList.remove('hidden');
-            isCameraMode = false;
-            elements.cameraPreview.style.transform = 'scale(1)'; // Reset simulate zoom
+            if (els.video.srcObject) {
+                els.video.srcObject = null;
+            }
         }
 
-        elements.btnCameraMode.addEventListener('click', startCamera);
-        elements.btnCloseCamera.addEventListener('click', stopCamera);
-
-        // Capture logic
-        elements.btnCapture.addEventListener('click', () => {
-            const video = elements.cameraPreview;
-            const canvas = document.createElement('canvas');
-            
-            // Handle digital zoom cropping if hardware zoom wasn't applied
-            // If hardware zoom worked, we just capture full frame.
-            // For simplicity, we capture the video dimensions.
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            
-            // Apply exposure simulation from slider before capture
-            const expVal = parseFloat(elements.camExposure.value);
-            if(expVal !== 0) {
-                 // Convert -1 to 1 range to brightness percentage roughly
-                 const brightness = 100 + (expVal * 50); 
-                 ctx.filter = `brightness(${brightness}%)`;
-            }
-
-            // Draw image. If simulated zoom is used, we need to crop center
-            if (currentZoom > 1 && video.style.transform.includes('scale')) {
-                const sWidth = video.videoWidth / currentZoom;
-                const sHeight = video.videoHeight / currentZoom;
-                const sx = (video.videoWidth - sWidth) / 2;
-                const sy = (video.videoHeight - sHeight) / 2;
-                ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
-            } else {
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            }
-
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-            loadImage(dataUrl);
+        async function startCamera() {
             stopCamera();
-        });
-
-        // Exposure slider simulation on video preview
-        elements.camExposure.addEventListener('input', (e) => {
-             const expVal = parseFloat(e.target.value);
-             const brightness = 100 + (expVal * 50); 
-             elements.cameraPreview.style.filter = `brightness(${brightness}%)`;
-        });
-
-
-        // --- Download Logic ---
-        
-        elements.btnDownload.addEventListener('click', async () => {
-            if (!currentImage) return;
-
-            // Prepare UI for capture: temporarily hide controls that shouldn't be in the shot if any existed
-            const originalTransform = elements.canvasWrapper.style.transform;
-            elements.canvasWrapper.style.transform = 'none'; // Ensure no CSS scaling affects the output
             
-            // We use html2canvas to capture the canvas wrapper, which includes the canvas (with filters baked in) 
-            // and the text overlay, AND the CSS padding/background forming the frame.
-            // By passing scale: 1, it captures the element at its actual DOM size, which might be scaled down.
-            // To get High Res, we need to temporarily make the wrapper take the full size of the internal canvas,
-            // capture it, then restore it.
-
-            elements.btnDownload.innerHTML = '<span class="animate-spin inline-block mr-2">⟳</span> Memproses...';
-            elements.btnDownload.disabled = true;
+            const constraints = {
+                video: {
+                    facingMode: AppState.facingMode,
+                    width: { ideal: 1920 }, // Try to get high res stream
+                    height: { ideal: 1080 }
+                },
+                audio: false
+            };
 
             try {
-                // 1. Save current display styles
-                const parent = elements.canvasWrapper.parentElement;
-                const origParentStyles = {
-                    display: parent.style.display,
-                    position: parent.style.position,
-                    width: parent.style.width,
-                    height: parent.style.height
-                };
-
-                // 2. Force wrapper to full image resolution for capture
-                // This is a bit tricky because the frame padding is percentage based.
-                // If we force the width to original image width, padding scales correctly.
+                // 1. Get initial stream
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                AppState.stream = stream;
+                els.video.srcObject = stream;
                 
-                // Create a temporary container off-screen to do the high-res render to avoid jarring UI jumps
-                const tempContainer = document.createElement('div');
-                tempContainer.style.position = 'absolute';
-                tempContainer.style.left = '-9999px';
-                tempContainer.style.top = '0';
-                document.body.appendChild(tempContainer);
+                // 2. Extract video track to check capabilities
+                AppState.videoTrack = stream.getVideoTracks()[0];
                 
-                // Clone the wrapper
-                const clone = elements.canvasWrapper.cloneNode(true);
+                // Wait for video to load metadata to ensure capabilities are populated in some browsers
+                await new Promise(resolve => els.video.onloadedmetadata = resolve);
+                els.video.play();
                 
-                // Get the actual drawn canvas from the original and copy it to the clone
-                const clonedCanvas = clone.querySelector('canvas');
-                clonedCanvas.getContext('2d').drawImage(elements.mainCanvas, 0, 0);
-                
-                // Force dimensions on clone based on original image
-                // Calculate total width including padding if it's a frame
-                let targetWidth = originalImageCanvas.width;
-                if(currentFrame !== 'none') {
-                    // Approximate padding to add to width to maintain frame ratio
-                    // If padding is 5%, then image is 90% of total width.
-                    // Total width = image width / 0.9
-                    const style = window.getComputedStyle(elements.canvasWrapper);
-                    const pl = parseFloat(style.paddingLeft);
-                    const wrapperWidth = elements.canvasWrapper.offsetWidth;
-                    const paddingPct = pl / wrapperWidth;
-                    
-                    if(paddingPct > 0) {
-                        targetWidth = originalImageCanvas.width / (1 - (paddingPct*2));
-                    }
-                }
-
-                clone.style.width = `${targetWidth}px`;
-                clone.style.height = 'auto';
-                
-                // Ensure text scales up nicely. The font size needs to be adjusted based on the scale factor
-                const scaleFactor = targetWidth / elements.canvasWrapper.offsetWidth;
-                const clonedTextContainer = clone.querySelector('#overlay-text-content');
-                if(clonedTextContainer) {
-                    const currentFontSize = window.getComputedStyle(elements.overlayTextContent).fontSize;
-                    clonedTextContainer.style.fontSize = `${parseFloat(currentFontSize) * scaleFactor}px`;
-                    
-                    // Adjust bottom/left positions if necessary, they are percentage based mostly via Tailwind but check
-                    const textOverlay = clone.querySelector('#text-overlay');
-                    textOverlay.style.bottom = `${parseFloat(window.getComputedStyle(elements.textOverlay).bottom) * scaleFactor}px`;
-                    textOverlay.style.left = `${parseFloat(window.getComputedStyle(elements.textOverlay).left) * scaleFactor}px`;
-                    textOverlay.style.right = `${parseFloat(window.getComputedStyle(elements.textOverlay).right) * scaleFactor}px`;
-                }
-
-                tempContainer.appendChild(clone);
-
-                // Wait a tick for styles to apply
-                await new Promise(r => setTimeout(r, 100));
-
-                const canvas = await html2canvas(clone, {
-                    useCORS: true,
-                    scale: 1, // We've already scaled the element up
-                    backgroundColor: currentFrame !== 'none' ? 'transparent' : '#000000', // Transparent back so frame color shows
-                    logging: false
-                });
-
-                // Clean up temp
-                document.body.removeChild(tempContainer);
-
-                // Download
-                const link = document.createElement('a');
-                link.download = `PhotoStyle_${Date.now()}.png`;
-                link.href = canvas.toDataURL('image/png', 1.0);
-                link.click();
+                checkCameraCapabilities();
 
             } catch (err) {
-                console.error("Export error:", err);
-                showMessage("Gagal", "Terjadi kesalahan saat memproses gambar.");
-            } finally {
-                // Restore button
-                elements.btnDownload.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2zm2.354 6.854-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 1 1 .708-.708L7.5 9.293V5.5a.5.5 0 0 1 1 0v3.793l1.146-1.147a.5.5 0 0 1 .708.708z"/></svg><span class="hidden sm:inline">Simpan (HD)</span>`;
-                elements.btnDownload.disabled = false;
-                elements.canvasWrapper.style.transform = originalTransform;
+                console.error("Camera access error:", err);
+                alert("Tidak dapat mengakses kamera. Pastikan izin diberikan dan perangkat memiliki kamera.");
+                closeCamera();
             }
+        }
+
+        function checkCameraCapabilities() {
+            if (!AppState.videoTrack) return;
+            
+            // Default states
+            els.zoomSliderContainer.classList.add('hidden');
+            let hasZoomSupport = false;
+
+            // Check if getCapabilities exists
+            if (typeof AppState.videoTrack.getCapabilities === 'function') {
+                AppState.capabilities = AppState.videoTrack.getCapabilities();
+                const settings = AppState.videoTrack.getSettings();
+                
+                console.log("Camera Capabilities:", AppState.capabilities);
+                
+                // Check for standard 'zoom' capability
+                if (AppState.capabilities.zoom) {
+                    hasZoomSupport = true;
+                    
+                    els.zoomSliderContainer.classList.remove('hidden');
+                    els.inpCamZoom.min = AppState.capabilities.zoom.min;
+                    els.inpCamZoom.max = AppState.capabilities.zoom.max;
+                    els.inpCamZoom.step = AppState.capabilities.zoom.step || 0.1;
+                    els.inpCamZoom.value = settings.zoom || AppState.capabilities.zoom.min;
+                    
+                    // Note: Manual zoom slider overrides the discrete lens buttons logic visually
+                }
+                
+                // Note on lenses (0.5x, 1x, 3x):
+                // The Web API currently does not expose a reliable way to say "give me the telephoto lens".
+                // Browsers that support multiple lenses usually expose them via the `zoom` constraint.
+                // Setting `zoom: 2` or `zoom: 3` will tell the browser/OS to switch to the telephoto lens 
+                // if available, or use digital zoom if not. 
+                // Therefore, we map our "Lens" buttons to standard zoom values.
+            }
+            
+            // Set up Lens buttons
+            els.lensBtns.forEach(btn => {
+                btn.addEventListener('click', () => applyZoom(parseFloat(btn.dataset.zoom)));
+            });
+            
+            // Set up slider
+            els.inpCamZoom.oninput = (e) => {
+                applyZoom(parseFloat(e.target.value), true);
+            };
+        }
+
+        async function applyZoom(zoomValue, fromSlider = false) {
+            if (!AppState.videoTrack) return;
+            
+            // Update UI
+            if (!fromSlider) {
+                els.lensBtns.forEach(b => {
+                    b.classList.remove('text-white', 'bg-gray-700');
+                    b.classList.add('text-gray-400', 'hover:bg-gray-800');
+                });
+                const activeBtn = Array.from(els.lensBtns).find(b => parseFloat(b.dataset.zoom) === zoomValue);
+                if (activeBtn) {
+                    activeBtn.classList.add('text-white', 'bg-gray-700');
+                    activeBtn.classList.remove('text-gray-400', 'hover:bg-gray-800');
+                }
+                if (els.inpCamZoom) els.inpCamZoom.value = zoomValue;
+            }
+            
+            // Apply constraint
+            try {
+                // If the browser supports zoom constraint, apply it.
+                // If it doesn't support getCapabilities or zoom, this applyConstraints might fail silently or throw.
+                if (typeof AppState.videoTrack.applyConstraints === 'function') {
+                     await AppState.videoTrack.applyConstraints({
+                        advanced: [{ zoom: zoomValue }]
+                    });
+                }
+            } catch (err) {
+                console.warn("Zoom constraint not supported or failed:", err);
+                // We don't alert here, as many devices just don't support it, but the app should keep working.
+            }
+        }
+
+        // Capture Photo
+        els.btnCapture.addEventListener('click', () => {
+            if (!AppState.videoTrack) return;
+            
+            // Add flash effect
+            const flash = document.createElement('div');
+            flash.className = 'absolute inset-0 bg-white z-50 transition-opacity duration-300';
+            els.camModal.appendChild(flash);
+            setTimeout(() => { flash.style.opacity = '0'; }, 50);
+            setTimeout(() => { flash.remove(); }, 350);
+
+            // We use a temporary canvas to grab the video frame
+            const tempCanvas = document.createElement('canvas');
+            // Use actual video dimensions, not display size
+            tempCanvas.width = els.video.videoWidth;
+            tempCanvas.height = els.video.videoHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Draw current video frame to canvas
+            // If using front camera (user), we might want to flip it horizontally so it's a mirror like normal selfies
+            if (AppState.facingMode === 'user') {
+                tempCtx.translate(tempCanvas.width, 0);
+                tempCtx.scale(-1, 1);
+            }
+            
+            tempCtx.drawImage(els.video, 0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Convert to image object
+            const imgURL = tempCanvas.toDataURL('image/jpeg', 1.0); // max quality
+            const capturedImg = new Image();
+            
+            capturedImg.onload = () => {
+                closeCamera();
+                initWorkspace(capturedImg);
+            };
+            capturedImg.src = imgURL;
         });
+
+        // Initialize empty state logic (ensure canvas is hidden initially)
+        els.mainCanvas.style.display = 'none';
 
     </script>
 </body>
