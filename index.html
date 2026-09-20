@@ -179,14 +179,20 @@
                     <div id="cam-status" class="text-xs text-psc-yellow hidden bg-yellow-900/20 p-2 rounded border border-yellow-900/50 text-center">Kamera aktif. Gunakan kontrol di area gambar.</div>
                 </div>
 
-                <!-- FILTERS TAB (DIPERBARUI) -->
+                <!-- FILTERS TAB (100 FILTER MASSAL) -->
                 <div id="tab-filters" class="tab-content hidden flex flex-col h-full">
                     <div class="mb-3 shrink-0">
                         <select id="filter-category" class="w-full bg-black border border-gray-700 text-white p-2.5 rounded focus:border-psc-yellow focus:outline-none text-sm appearance-none">
-                            <option value="premium">Premium / Instagram Styles</option>
-                            <option value="film">Classic Film Cameras</option>
-                            <option value="cinematic">Cinematic Grading</option>
-                            <option value="vintage">Vintage & Retro</option>
+                            <option value="film">Film Styles (10 Filter)</option>
+                            <option value="retro">Retro Styles (10 Filter)</option>
+                            <option value="vintage">Vintage & Classic (10 Filter)</option>
+                            <option value="cinematic">Cinematic Grading (10 Filter)</option>
+                            <option value="professional">Professional Photo (10 Filter)</option>
+                            <option value="leica">Kamera Leica (10 Filter)</option>
+                            <option value="hasselblad">Kamera Hasselblad (10 Filter)</option>
+                            <option value="canon">Kamera Canon (10 Filter)</option>
+                            <option value="ricoh">Kamera Ricoh (10 Filter)</option>
+                            <option value="fuji">Kamera Fuji (10 Filter)</option>
                         </select>
                     </div>
                     <div class="flex-1 overflow-y-auto pr-1 pb-4">
@@ -197,7 +203,7 @@
                     </div>
                 </div>
 
-                <!-- FRAME TAB (DIPERBARUI LEBIH LELUASA) -->
+                <!-- FRAME TAB -->
                 <div id="tab-frame" class="tab-content hidden space-y-6">
                     <div>
                         <label class="block text-sm font-semibold text-gray-300 mb-3">Preset Frame (Auto-Kalkulasi)</label>
@@ -214,22 +220,18 @@
                     <div class="bg-black/40 p-3 rounded-lg border border-gray-800">
                         <label class="block text-sm font-semibold text-psc-yellow mb-3 border-b border-gray-700 pb-2">Kontrol Ketebalan Bebas</label>
                         <div class="grid grid-cols-2 gap-4">
-                            <!-- Slider Atas -->
                             <div>
                                 <label class="text-[11px] text-gray-400 block mb-1 flex justify-between">Atas <span id="val-pad-t" class="text-white">0.0</span></label>
                                 <input type="range" class="pad-slider" data-target="padT" id="pad-top" min="0" max="15" step="0.1" value="0">
                             </div>
-                            <!-- Slider Bawah -->
                             <div>
                                 <label class="text-[11px] text-gray-400 block mb-1 flex justify-between">Bawah <span id="val-pad-b" class="text-white">0.0</span></label>
                                 <input type="range" class="pad-slider" data-target="padB" id="pad-bottom" min="0" max="15" step="0.1" value="0">
                             </div>
-                            <!-- Slider Kiri -->
                             <div>
                                 <label class="text-[11px] text-gray-400 block mb-1 flex justify-between">Kiri <span id="val-pad-l" class="text-white">0.0</span></label>
                                 <input type="range" class="pad-slider" data-target="padL" id="pad-left" min="0" max="15" step="0.1" value="0">
                             </div>
-                            <!-- Slider Kanan -->
                             <div>
                                 <label class="text-[11px] text-gray-400 block mb-1 flex justify-between">Kanan <span id="val-pad-r" class="text-white">0.0</span></label>
                                 <input type="range" class="pad-slider" data-target="padR" id="pad-right" min="0" max="15" step="0.1" value="0">
@@ -248,7 +250,7 @@
 
                 <!-- TEXT TAB -->
                 <div id="tab-text" class="tab-content hidden space-y-4 pb-4">
-                    <p class="text-[11px] md:text-xs text-gray-400 mb-3 bg-gray-900/50 p-2 rounded">Teks bergaya mesin ketik. Gunakan slider untuk mengatur ukuran dan posisi secara leluasa.</p>
+                    <p class="text-[11px] md:text-xs text-gray-400 mb-3 bg-gray-900/50 p-2 rounded">Teks dapat digunakan meskipun Anda menggunakan frame 'Original' (tanpa frame). Teks akan otomatis menempel di foto.</p>
                     
                     <div class="grid grid-cols-2 gap-3">
                         <div>
@@ -289,7 +291,7 @@
 
                     <div class="pt-3 border-t border-gray-800 mt-2 flex justify-between items-center">
                         <label class="block text-xs font-semibold text-gray-300">Warna Teks</label>
-                        <input type="color" id="text-color" value="#222222" class="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0">
+                        <input type="color" id="text-color" value="#f5f5f5" class="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0">
                     </div>
                 </div>
 
@@ -356,7 +358,7 @@
             }, 3500);
         }
 
-        // --- STREAMING_CHUNK: Inisialisasi State & Data Filter Premium... ---
+        // --- STREAMING_CHUNK: Mengonfigurasi State Dasar... ---
         const state = {
             image: null, 
             originalWidth: 0,
@@ -371,7 +373,7 @@
             // Filter
             activeFilterCSS: '',
             
-            // Frame (Baru: Lebih Fleksibel)
+            // Frame
             padT: 0,
             padB: 0,
             padL: 0,
@@ -382,7 +384,7 @@
             textDate: '',
             textYear: '',
             textLocation: '',
-            textColor: '#222222',
+            textColor: '#f5f5f5',
             textAlign: 'split',  
             textSize: 1.0,       
             textOffsetY: 0,      
@@ -431,45 +433,132 @@
         }
         createDefaultLogo();
 
-        // --- Filter Berkualitas Tinggi (Curated CSS Filters) ---
+        // --- STREAMING_CHUNK: Mendefinisikan Database 100 Filter Kustom... ---
+        // Menambahkan tepat 10 filter untuk 10 Kategori (Total 100 filter) dengan CSS Engine (Terbaik dan Tanpa API)
         const filterDatabase = {
-            premium: [
-                { name: "Normal", css: "none" },
-                { name: "Clarendon", css: "contrast(1.2) saturate(1.35) brightness(1.1)" },
-                { name: "Gingham", css: "brightness(1.05) hue-rotate(-10deg) contrast(0.9) saturate(1.1)" },
-                { name: "Moon (B&W)", css: "grayscale(1) contrast(1.1) brightness(1.1)" },
-                { name: "Lark", css: "contrast(0.9) saturate(1.3) brightness(1.1) sepia(0.2)" },
-                { name: "Reyes", css: "sepia(0.22) brightness(1.1) contrast(0.85) saturate(0.75)" },
-                { name: "Juno", css: "saturate(1.4) contrast(1.15) brightness(1.1) sepia(0.1)" },
-                { name: "Slumber", css: "saturate(0.66) brightness(1.05) contrast(1.05) sepia(0.22)" },
-                { name: "Crema", css: "sepia(0.5) contrast(1.15) brightness(1.15)" },
-                { name: "Ludwig", css: "saturate(1.2) contrast(1.05) brightness(1.05) sepia(0.1)" }
-            ],
             film: [
-                { name: "Normal", css: "none" },
-                { name: "Kodak Portra", css: "contrast(1.1) saturate(1.2) sepia(0.1) brightness(1.05)" },
-                { name: "Fuji Superia", css: "contrast(1.15) saturate(1.3) hue-rotate(-5deg)" },
-                { name: "Agfa Vista", css: "contrast(1.2) saturate(1.4) sepia(0.15)" },
-                { name: "Ilford HP5", css: "grayscale(1) contrast(1.3) brightness(0.9)" },
-                { name: "Polaroid", css: "sepia(0.3) contrast(1.2) brightness(1.1) saturate(0.8)" }
+                { name: "Kodak Portra 160", css: "sepia(0.1) saturate(1.1) contrast(0.95)" },
+                { name: "Kodak Portra 400", css: "sepia(0.15) saturate(1.2) contrast(1.05)" },
+                { name: "Kodak Portra 800", css: "sepia(0.2) saturate(1.3) contrast(1.1)" },
+                { name: "Kodak Ektar 100", css: "saturate(1.4) contrast(1.2)" },
+                { name: "Kodak Tri-X 400", css: "grayscale(1) contrast(1.3)" },
+                { name: "Kodak Gold 200", css: "sepia(0.2) saturate(1.25) contrast(1.1)" },
+                { name: "Cinestill 800T", css: "hue-rotate(-15deg) saturate(1.2) contrast(1.1) brightness(1.05)" },
+                { name: "Ilford HP5 Plus", css: "grayscale(1) contrast(1.2) brightness(0.95)" },
+                { name: "Agfa Vista 100", css: "saturate(1.3) contrast(1.1) sepia(0.1)" },
+                { name: "Fuji Superia 400", css: "hue-rotate(5deg) saturate(1.2) contrast(1.15)" }
             ],
-            cinematic: [
-                { name: "Normal", css: "none" },
-                { name: "Teal & Orange", css: "sepia(0.2) hue-rotate(-15deg) saturate(1.5) contrast(1.2)" },
-                { name: "Matrix Green", css: "sepia(0.8) hue-rotate(70deg) saturate(1.5) contrast(1.2)" },
-                { name: "Cyberpunk", css: "saturate(2) contrast(1.3) hue-rotate(30deg)" },
-                { name: "Film Noir", css: "grayscale(1) contrast(1.5) brightness(0.8)" }
+            retro: [
+                { name: "80s Vibe", css: "sepia(0.3) saturate(1.5) hue-rotate(-10deg) contrast(1.1)" },
+                { name: "90s Camcorder", css: "saturate(0.8) contrast(1.2) sepia(0.1)" },
+                { name: "Lo-Fi Music", css: "contrast(1.5) saturate(1.5) sepia(0.2)" },
+                { name: "Polaroid 600", css: "sepia(0.2) contrast(1.1) brightness(1.1) saturate(0.9)" },
+                { name: "Faded Print", css: "contrast(0.8) brightness(1.1) sepia(0.2)" },
+                { name: "Warm Nostalgia", css: "sepia(0.4) saturate(1.2) contrast(1.1)" },
+                { name: "Cool Fade", css: "hue-rotate(15deg) contrast(0.8) brightness(1.1)" },
+                { name: "Retro Chrome", css: "saturate(1.5) contrast(1.3)" },
+                { name: "VHS Glitch", css: "saturate(2) contrast(0.9) hue-rotate(10deg)" },
+                { name: "Old School B&W", css: "grayscale(1) sepia(0.2) contrast(1.2)" }
             ],
             vintage: [
-                { name: "Normal", css: "none" },
-                { name: "1977", css: "sepia(0.5) hue-rotate(-30deg) saturate(1.4) contrast(1.1)" },
+                { name: "1970s Warmth", css: "sepia(0.5) saturate(1.3) contrast(1.1)" },
                 { name: "Earlybird", css: "sepia(0.25) contrast(1.25) brightness(0.9) hue-rotate(-15deg)" },
-                { name: "Toaster", css: "sepia(0.4) contrast(1.5) brightness(0.9) hue-rotate(-15deg)" },
-                { name: "Walden", css: "sepia(0.3) contrast(0.8) brightness(1.1) saturate(1.6) hue-rotate(-10deg)" }
+                { name: "Toaster Classic", css: "sepia(0.4) contrast(1.5) brightness(0.9) hue-rotate(-15deg)" },
+                { name: "1920s Sepia", css: "sepia(0.8) contrast(1.2)" },
+                { name: "Walden Filter", css: "sepia(0.3) contrast(0.8) brightness(1.1) saturate(1.6) hue-rotate(-10deg)" },
+                { name: "Antique Tone", css: "sepia(0.6) contrast(1.1) brightness(0.9)" },
+                { name: "Faded Sepia", css: "sepia(0.7) contrast(0.8) brightness(1.1)" },
+                { name: "Aged Photo", css: "sepia(0.5) contrast(1.3) hue-rotate(-5deg)" },
+                { name: "Dust & Time", css: "sepia(0.4) contrast(1.4) saturate(0.8)" },
+                { name: "Tintype Metal", css: "grayscale(1) sepia(0.3) contrast(1.4)" }
+            ],
+            cinematic: [
+                { name: "Teal & Orange", css: "sepia(0.2) hue-rotate(-15deg) saturate(1.5) contrast(1.2)" },
+                { name: "Matrix Green", css: "sepia(0.8) hue-rotate(70deg) saturate(1.5) contrast(1.2)" },
+                { name: "Cyberpunk Night", css: "saturate(2) contrast(1.3) hue-rotate(30deg)" },
+                { name: "Film Noir", css: "grayscale(1) contrast(1.5) brightness(0.8)" },
+                { name: "Hollywood Warm", css: "sepia(0.3) saturate(1.2) contrast(1.2)" },
+                { name: "Moody Dark", css: "brightness(0.8) contrast(1.3) saturate(0.9)" },
+                { name: "Sci-Fi Blue", css: "hue-rotate(180deg) saturate(1.3) contrast(1.2)" },
+                { name: "Desaturated Epic", css: "saturate(0.5) contrast(1.3)" },
+                { name: "Fantasy Color", css: "saturate(1.4) contrast(1.2) brightness(1.1)" },
+                { name: "Thriller Contrast", css: "contrast(1.6) saturate(0.8) brightness(0.9)" }
+            ],
+            professional: [
+                { name: "Auto Enhance", css: "contrast(1.1) brightness(1.05) saturate(1.1)" },
+                { name: "Portrait Smooth", css: "brightness(1.05) contrast(0.95) saturate(1.05)" },
+                { name: "Landscape Vibrant", css: "saturate(1.3) contrast(1.15)" },
+                { name: "Product Clean", css: "brightness(1.1) contrast(1.05)" },
+                { name: "Studio Light", css: "brightness(1.15) contrast(0.9) saturate(0.95)" },
+                { name: "Natural Daylight", css: "contrast(1.05) sepia(0.05)" },
+                { name: "HDR Pop", css: "contrast(1.2) saturate(1.2) brightness(1.05)" },
+                { name: "Clean White", css: "brightness(1.1) contrast(1.1) saturate(0.9)" },
+                { name: "Sharp & Crisp", css: "contrast(1.25) saturate(1.05)" },
+                { name: "Balanced Exposure", css: "brightness(1.05) contrast(1.05)" }
+            ],
+            leica: [
+                { name: "Leica Monochrom", css: "grayscale(1) contrast(1.4)" },
+                { name: "Leica M10 Natural", css: "saturate(1.1) contrast(1.1)" },
+                { name: "Leica Look Vivid", css: "saturate(1.25) contrast(1.2)" },
+                { name: "Leica Summilux", css: "contrast(0.95) brightness(1.05)" },
+                { name: "Leica Q2 High Contrast", css: "grayscale(1) contrast(1.5) brightness(0.95)" },
+                { name: "Leica Classic B&W", css: "grayscale(1) contrast(1.2)" },
+                { name: "Leica Glow", css: "brightness(1.15) contrast(0.9) saturate(1.1)" },
+                { name: "Leica M Film", css: "sepia(0.15) contrast(1.15) saturate(1.05)" },
+                { name: "Leica Vibrant", css: "saturate(1.4) contrast(1.1)" },
+                { name: "Leica Low Light", css: "brightness(1.25) contrast(1.1) saturate(0.9)" }
+            ],
+            hasselblad: [
+                { name: "HNCS Natural", css: "contrast(1.05) saturate(1.05)" },
+                { name: "X2D Rich Colors", css: "saturate(1.2) contrast(1.15)" },
+                { name: "500C Classic", css: "sepia(0.1) contrast(1.1) saturate(1.1)" },
+                { name: "Medium Format", css: "contrast(1.2) saturate(1.1)" },
+                { name: "Hasselblad Portrait", css: "brightness(1.05) contrast(0.95) saturate(1.05)" },
+                { name: "Hasselblad Landscape", css: "saturate(1.3) contrast(1.1) hue-rotate(-5deg)" },
+                { name: "Hasselblad Studio", css: "brightness(1.1) contrast(1.1)" },
+                { name: "Hasselblad Film", css: "sepia(0.15) contrast(1.1) saturate(0.9)" },
+                { name: "Hasselblad Dynamic", css: "contrast(0.9) saturate(1.2) brightness(1.05)" },
+                { name: "Hasselblad B&W", css: "grayscale(1) contrast(1.3) brightness(1.05)" }
+            ],
+            canon: [
+                { name: "Canon Portrait", css: "sepia(0.1) brightness(1.05) contrast(0.95)" },
+                { name: "Canon Vivid", css: "saturate(1.3) contrast(1.1)" },
+                { name: "Canon Neutral", css: "contrast(0.95) saturate(0.95)" },
+                { name: "Canon Landscape", css: "saturate(1.2) contrast(1.15) hue-rotate(-5deg)" },
+                { name: "Canon Faithful", css: "saturate(1.05) contrast(1.05)" },
+                { name: "Canon Monochrome", css: "grayscale(1) contrast(1.1)" },
+                { name: "L-Lens Pop", css: "contrast(1.2) saturate(1.1)" },
+                { name: "Skin Tones Warm", css: "sepia(0.05) brightness(1.05)" },
+                { name: "Cinema EOS", css: "saturate(0.9) contrast(1.1) sepia(0.1)" },
+                { name: "M50 Vlogger", css: "brightness(1.1) saturate(1.2) contrast(1.05)" }
+            ],
+            ricoh: [
+                { name: "GR III High Contrast", css: "grayscale(1) contrast(1.6) brightness(0.9)" },
+                { name: "GR IIIx Positive", css: "saturate(1.3) contrast(1.2) sepia(0.1)" },
+                { name: "GR Negative Film", css: "sepia(0.15) contrast(1.1) saturate(0.9)" },
+                { name: "GR Hard Monotone", css: "grayscale(1) contrast(1.4) brightness(0.85)" },
+                { name: "GR Soft Monotone", css: "grayscale(1) contrast(0.9) brightness(1.1)" },
+                { name: "GR Retro", css: "sepia(0.3) contrast(1.1) saturate(0.8)" },
+                { name: "GR Bleach Bypass", css: "saturate(0.5) contrast(1.4)" },
+                { name: "GR Cross Process", css: "hue-rotate(45deg) saturate(1.5) contrast(1.2)" },
+                { name: "GR Vivid", css: "saturate(1.5) contrast(1.2)" },
+                { name: "GR Standard", css: "contrast(1.1) saturate(1.1)" }
+            ],
+            fuji: [
+                { name: "Provia Standard", css: "contrast(1.05) saturate(1.05)" },
+                { name: "Velvia Vivid", css: "saturate(1.4) contrast(1.15)" },
+                { name: "Astia Soft", css: "saturate(0.9) contrast(0.95) brightness(1.05)" },
+                { name: "Classic Chrome", css: "saturate(0.75) contrast(1.15) sepia(0.1)" },
+                { name: "PRO Neg. Hi", css: "contrast(1.2) saturate(0.95)" },
+                { name: "PRO Neg. Std", css: "contrast(0.95) saturate(0.9)" },
+                { name: "Classic Negative", css: "sepia(0.15) saturate(0.85) contrast(1.25)" },
+                { name: "Eterna Cinema", css: "saturate(0.65) contrast(0.85)" },
+                { name: "Acros B&W", css: "grayscale(1) contrast(1.25)" },
+                { name: "Fuji Monochrome", css: "grayscale(1) contrast(1.1)" }
             ]
         };
 
-        // --- STREAMING_CHUNK: Setup Event Listeners UI... ---
+        // --- STREAMING_CHUNK: Setup Interaksi Event Listener... ---
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.tab-btn').forEach(b => {
@@ -510,7 +599,7 @@
             });
         }
         document.getElementById('filter-category').addEventListener('change', (e) => renderFilterButtons(e.target.value));
-        renderFilterButtons('premium'); 
+        renderFilterButtons('film'); 
         
         document.getElementById('btn-reset-filter').addEventListener('click', () => {
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -521,7 +610,6 @@
         });
 
         // ------------------ LOGIKA FRAME LELUASA BARU ------------------
-        
         function updateSlidersFromState() {
             document.getElementById('pad-top').value = state.padT;
             document.getElementById('pad-bottom').value = state.padB;
@@ -541,7 +629,6 @@
             }
 
             const maxDim = Math.max(state.originalWidth, state.originalHeight);
-            // Base padding calculation logic
             
             switch(type) {
                 case 'none': state.padT=0; state.padB=0; state.padL=0; state.padR=0; break;
@@ -550,22 +637,18 @@
                 case 'tall': state.padT=1.5; state.padB=5; state.padL=0.5; state.padR=0.5; break;
                 case 'borderless': state.padT=0.3; state.padB=0.3; state.padL=0.3; state.padR=0.3; break;
                 case 'square':
-                    // Kalkulasi otomatis agar menjadi kotak 1:1
                     const baseUnit = maxDim * 0.05; 
-                    const targetDim = maxDim + (baseUnit * 2); // Ukuran minimal frame
+                    const targetDim = maxDim + (baseUnit * 2);
                     const diffX = targetDim - state.originalWidth;
                     const diffY = targetDim - state.originalHeight;
                     
                     state.padL = (diffX / 2) / baseUnit;
                     state.padR = (diffX / 2) / baseUnit;
-                    
-                    // Beri sedikit porsi lebih ke bawah agar estetis mirip polaroid square
                     state.padT = (diffY * 0.4) / baseUnit; 
                     state.padB = (diffY * 0.6) / baseUnit; 
                     break;
             }
             
-            // Clamping value agar tidak error di UI
             state.padT = Math.max(0, Math.min(15, state.padT));
             state.padB = Math.max(0, Math.min(15, state.padB));
             state.padL = Math.max(0, Math.min(15, state.padL));
@@ -577,7 +660,6 @@
 
         document.querySelectorAll('.frame-preset-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                // UI Highlight
                 document.querySelectorAll('.frame-preset-btn').forEach(b => {
                     b.classList.remove('border-psc-yellow', 'text-psc-yellow');
                     b.classList.add('border-gray-700');
@@ -590,14 +672,12 @@
             });
         });
 
-        // Event listener untuk individual sliders (Kontrol Bebas)
         document.querySelectorAll('.pad-slider').forEach(slider => {
             slider.addEventListener('input', (e) => {
                 const targetState = e.target.getAttribute('data-target');
                 const val = parseFloat(e.target.value);
                 state[targetState] = val;
                 
-                // Update text label
                 let idText = '';
                 if(targetState === 'padT') idText = 'val-pad-t';
                 if(targetState === 'padB') idText = 'val-pad-b';
@@ -605,7 +685,6 @@
                 if(targetState === 'padR') idText = 'val-pad-r';
                 document.getElementById(idText).textContent = val.toFixed(1);
                 
-                // Hapus highlight preset karena user sudah custom
                 document.querySelectorAll('.frame-preset-btn').forEach(b => {
                     b.classList.remove('border-psc-yellow', 'text-psc-yellow');
                     b.classList.add('border-gray-700');
@@ -696,7 +775,6 @@
         });
 
         // --- STREAMING_CHUNK: Modul Kamera & Manajemen File... ---
-
         const uploadInput = document.getElementById('upload-input');
         document.getElementById('btn-upload-trigger').addEventListener('click', () => uploadInput.click());
         
@@ -720,9 +798,8 @@
                     state.originalWidth = img.width;
                     state.originalHeight = img.height;
                     
-                    // Reset to none or classic on new image load so it looks good immediately
                     applyFramePreset('none');
-                    document.querySelectorAll('.frame-preset-btn')[0].click(); // Simulate clicking 'Original'
+                    document.querySelectorAll('.frame-preset-btn')[0].click();
 
                     document.getElementById('no-image-text').style.display = 'none';
                     canvas.style.display = 'block';
@@ -934,8 +1011,7 @@
         });
 
 
-        // --- STREAMING_CHUNK: Engine Render Utama... ---
-
+        // --- STREAMING_CHUNK: Engine Render Utama dengan Pemisahan Logika Teks... ---
         function render() {
             if (!state.image) return;
 
@@ -954,16 +1030,16 @@
             ctx.fillStyle = state.frameColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 3. Draw Image + Filter Premium
+            // 3. Draw Image + Filter
             ctx.save();
             if (state.activeFilterCSS) ctx.filter = state.activeFilterCSS;
             ctx.drawImage(state.image, pixelPadL, pixelPadT, state.originalWidth, state.originalHeight);
             ctx.restore();
 
-            // 4. Draw Text 
-            const isFrameVisible = (state.padT > 0 || state.padB > 0 || state.padL > 0 || state.padR > 0);
+            // 4. Draw Text (SEKARANG BEBAS DARI FRAME)
+            const hasText = state.textDate || state.textYear || state.textLocation;
             
-            if (isFrameVisible) {
+            if (hasText) {
                 ctx.fillStyle = state.textColor;
                 
                 const baseFontSize = Math.max(canvas.width * 0.015, 12);
@@ -972,9 +1048,12 @@
                 ctx.font = `bold ${fontSize}px "Courier New", Courier, monospace`;
                 ctx.textBaseline = 'middle';
                 
-                // Kalkulasi dasar Y: Tempatkan di tengah-tengah margin bawah jika ada, jika tidak, di bagian bawah gambar
+                // Kalkulasi dasar Y. 
+                // Jika tidak ada bingkai bawah (padB <= 0), posisikan di dalam foto
                 let defaultY = canvas.height - (pixelPadB / 2);
-                if (pixelPadB <= 0) defaultY = canvas.height - 20; // fallback aman
+                if (pixelPadB <= 0) {
+                    defaultY = canvas.height - (canvas.height * 0.03); // 3% dari tepi bawah gambar
+                }
                 
                 const textY = defaultY + (canvas.height * (state.textOffsetY / 100));
 
@@ -982,8 +1061,12 @@
                 const locStr = state.textLocation;
 
                 if (state.textAlign === 'split') {
-                    const leftX = pixelPadL + (canvas.width * (state.textOffsetX / 100)) + 10;
-                    const rightX = canvas.width - pixelPadR + (canvas.width * (state.textOffsetX / 100)) - 10;
+                    // Margin kiri/kanan. Tetap otomatis rapi meskipun padding 0
+                    const leftMargin = pixelPadL > 0 ? pixelPadL + 10 : 20; 
+                    const rightMargin = pixelPadR > 0 ? canvas.width - pixelPadR - 10 : canvas.width - 20;
+
+                    const leftX = leftMargin + (canvas.width * (state.textOffsetX / 100));
+                    const rightX = rightMargin + (canvas.width * (state.textOffsetX / 100));
 
                     if (dateStr) {
                         ctx.textAlign = 'left';
@@ -1000,9 +1083,13 @@
                         ctx.textAlign = state.textAlign; 
                         
                         let basePosX;
-                        if(state.textAlign === 'left') basePosX = pixelPadL + 10;
-                        else if(state.textAlign === 'right') basePosX = canvas.width - pixelPadR - 10;
-                        else basePosX = canvas.width / 2;
+                        if(state.textAlign === 'left') {
+                            basePosX = pixelPadL > 0 ? pixelPadL + 10 : 20;
+                        } else if(state.textAlign === 'right') {
+                            basePosX = pixelPadR > 0 ? canvas.width - pixelPadR - 10 : canvas.width - 20;
+                        } else {
+                            basePosX = canvas.width / 2;
+                        }
 
                         const textX = basePosX + (canvas.width * (state.textOffsetX / 100));
                         ctx.fillText(combinedText, textX, textY);
@@ -1030,7 +1117,7 @@
             }
         }
 
-        // Drag Logic Watermark
+        // --- Drag Logic Watermark ---
         function getPointerPos(e) {
             const rect = canvas.getBoundingClientRect();
             let clientX = e.clientX;
